@@ -34,7 +34,9 @@ class MlpPolicy(object):
             for i in range(num_hid_layers):
                 last_out = tf.nn.tanh(tf.layers.dense(last_out, hid_size, name='fc%i'%(i+1), kernel_initializer=U.normc_initializer(1.0)))
             if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
-                mean = tf.layers.dense(last_out, pdtype.param_shape()[0]//2, name='final', kernel_initializer=U.normc_initializer(0.01))
+                a_N = tf.layers.dense(last_out, pdtype.param_shape()[0]//2, name="a_N", kernel_initializer=U.normc_initializer(0.01), use_bias=False)
+                a_L = tf.layers.dense(obz,pdtype.param_shape()[0]//2,name="a_L",kernel_initializer=U.normc_initializer(0.01))
+                mean = tf.add(a_L,a_N, name="final")
                 logstd = tf.get_variable(name="logstd", shape=[1, pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
                 pdparam = tf.concat([mean, mean * 0.0 + logstd], axis=1)
             else:
@@ -58,4 +60,3 @@ class MlpPolicy(object):
         return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, self.scope)
     def get_initial_state(self):
         return []
-
