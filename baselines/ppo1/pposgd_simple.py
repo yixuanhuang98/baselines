@@ -141,6 +141,9 @@ def learn(env, policy_fn, *,
 
     assert sum([max_iters>0, max_timesteps>0, max_episodes>0, max_seconds>0])==1, "Only one time constraint permitted"
 
+    reward_list = []
+    timestep_list = []
+
     while True:
         if callback: callback(locals(), globals())
         if max_timesteps and timesteps_so_far >= max_timesteps:
@@ -197,14 +200,22 @@ def learn(env, policy_fn, *,
         lenbuffer.extend(lens)
         rewbuffer.extend(rews)
         logger.record_tabular("EpLenMean", np.mean(lenbuffer))
-        logger.record_tabular("EpRewMean", np.mean(rewbuffer))
+        mean_reward = np.mean(rewbuffer)
+        reward_list.append(mean_reward)
+        logger.record_tabular("EpRewMean", mean_reward)
         logger.record_tabular("LastRew", np.mean(rews))
         episodes_so_far += len(lens)
         timesteps_so_far += sum(lens)
         iters_so_far += 1
         logger.record_tabular("TimestepsSoFar", timesteps_so_far)
+        timestep_list.append(timesteps_so_far)
+        with open("./scn_ts.txt", "a") as f:
+            f.write(str(timesteps_so_far))
         if MPI.COMM_WORLD.Get_rank()==0:
             logger.dump_tabular()
+
+    np.savetxt('./baselines/ppo1/data/scn_rew.txt',np.asarray(reward_list))
+    np.savetxt('./baselines/ppo1/data/scn_ts.txt',np.asarray(timestep_list))
 
     return pi
 
