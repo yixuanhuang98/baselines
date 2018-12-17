@@ -178,7 +178,7 @@ def learn(env, policy_fn, *,
 
         assign_old_eq_new() # set old parameter values to new parameter values
         logger.log("Optimizing...")
-        logger.log(fmt_row(13, loss_names))
+        #logger.log(fmt_row(13, loss_names))
         # Here we do a bunch of optimization epochs over the data
         for _ in range(optim_epochs):
             losses = [] # list of tuples, each of which gives the loss for a minibatch
@@ -186,7 +186,7 @@ def learn(env, policy_fn, *,
                 *newlosses, g = lossandgrad(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
                 adam.update(g, optim_stepsize * cur_lrmult)
                 losses.append(newlosses)
-            logger.log(fmt_row(13, np.mean(losses, axis=0)))
+            #logger.log(fmt_row(13, np.mean(losses, axis=0)))
 
         logger.log("Evaluating losses...")
         losses = []
@@ -203,7 +203,7 @@ def learn(env, policy_fn, *,
         mean_reward = np.mean(rewbuffer)
         reward_list.append(mean_reward)
         logger.record_tabular("EpRewMean", mean_reward)
-        logger.record_tabular("LastRew", np.mean(rews))
+        #logger.record_tabular("LastRew", np.mean(rews))
         episodes_so_far += len(lens)
         timesteps_so_far += sum(lens)
         iters_so_far += 1
@@ -214,8 +214,8 @@ def learn(env, policy_fn, *,
         if MPI.COMM_WORLD.Get_rank()==0:
             logger.dump_tabular()
 
-    np.savetxt('./baselines/ppo1/data/scn_rew.txt',np.asarray(reward_list))
-    np.savetxt('./baselines/ppo1/data/scn_ts.txt',np.asarray(timestep_list))
+    np.savetxt('./baselines/ppo1/data/mlp64_rew.txt',np.asarray(reward_list))
+    np.savetxt('./baselines/ppo1/data/mpl64_ts.txt',np.asarray(timestep_list))
 
     return pi
 

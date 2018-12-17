@@ -10,7 +10,7 @@ class CnnPolicy(object):
             self._init(ob_space, ac_space, kind)
             self.scope = tf.get_variable_scope().name
 
-    def _init(self, ob_space, ac_space, kind):
+    def _init(self, ob_space, ac_space, kind, hidden_space):
         assert isinstance(ob_space, gym.spaces.Box)
 
         self.pdtype = pdtype = make_pdtype(ac_space)
@@ -23,19 +23,23 @@ class CnnPolicy(object):
             x = tf.nn.relu(U.conv2d(x, 16, "l1", [8, 8], [4, 4], pad="VALID"))
             x = tf.nn.relu(U.conv2d(x, 32, "l2", [4, 4], [2, 2], pad="VALID"))
             x = U.flattenallbut0(x)
-            x = tf.nn.relu(tf.layers.dense(x, 256, name='lin', kernel_initializer=U.normc_initializer(1.0)))
+            x1 = tf.nn.relu(tf.layers.dense(x, 256, name='lin', kernel_initializer=U.normc_initializer(1.0)))
         elif kind == 'large': # Nature DQN
             x = tf.nn.relu(U.conv2d(x, 32, "l1", [8, 8], [4, 4], pad="VALID"))
             x = tf.nn.relu(U.conv2d(x, 64, "l2", [4, 4], [2, 2], pad="VALID"))
             x = tf.nn.relu(U.conv2d(x, 64, "l3", [3, 3], [1, 1], pad="VALID"))
             x = U.flattenallbut0(x)
-            x = tf.nn.relu(tf.layers.dense(x, 512, name='lin', kernel_initializer=U.normc_initializer(1.0)))
+            x1 = tf.nn.relu(tf.layers.dense(x, 512, name='lin', kernel_initializer=U.normc_initializer(1.0)))
         else:
             raise NotImplementedError
 
-        logits = tf.layers.dense(x, pdtype.param_shape()[0], name='logits', kernel_initializer=U.normc_initializer(0.01))
+        self.vpred = tf.layers.dense(x1, 1, "value", kernel_initializer=U.normc_initializer(1.0))[:,0]
+        a_L = tf.layers.dense(x, pdtype.param_shape()[0], name="a_L", kernel_initializer=U.normc_initializer(1.0))
+        x = tf.nn.relu(tf.layers.dense(x, hidden_space, name='lin',kernel_initializer=U.normc_initializer(1.0)))
+        a_N = tf.layers.dense(x, pdtype.param_shape()[0], name="a_N", kernel_initializer=U.normc_initializer(1.0))
+        logits = tf.add(a_l,a_N, name="logits")
+
         self.pd = pdtype.pdfromflat(logits)
-        self.vpred = tf.layers.dense(x, 1, name='value', kernel_initializer=U.normc_initializer(1.0))[:,0]
 
         self.state_in = []
         self.state_out = []
@@ -53,4 +57,3 @@ class CnnPolicy(object):
         return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, self.scope)
     def get_initial_state(self):
         return []
-
