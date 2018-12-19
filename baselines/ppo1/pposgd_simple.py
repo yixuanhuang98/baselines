@@ -102,16 +102,26 @@ def learn(env, policy_fn, *,
     ob = U.get_placeholder_cached(name="ob")
     ac = pi.pdtype.sample_placeholder([None])
 
+    #TODO: check if choice should also be sampled
+    ch = pi.choice
+
     kloldnew = oldpi.pd.kl(pi.pd)
+    ckloldnew = oldpi.cpd.kl(pi.cpd)
     ent = pi.pd.entropy()
-    meankl = tf.reduce_mean(kloldnew)
-    meanent = tf.reduce_mean(ent)
+    cent = pi.cpd.entropy()
+    meankl = tf.reduce_mean(kloldnew+ckloldnew)
+    meanent = tf.reduce_mean(cent+ent)
     pol_entpen = (-entcoeff) * meanent
 
-    ratio = tf.exp(pi.pd.logp(ac) - oldpi.pd.logp(ac)) # pnew / pold
-    surr1 = ratio * atarg # surrogate from conservative policy iteration
-    surr2 = tf.clip_by_value(ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg #
-    pol_surr = - tf.reduce_mean(tf.minimum(surr1, surr2)) # PPO's pessimistic surrogate (L^CLIP)
+    ac_ratio = tf.exp(pi.pd.logp(ac) - oldpi.pd.logp(ac)) # pnew / pold
+    ch_ratio = tf.exp(pi.cpd.logp(ch) - oldpi.cpd.logp(ch))
+
+    surr1 = ac_ratio * ch_ratio * atarg # surrogate from conservative policy iteration
+    surr2 = tf.clip_by_value(ac_ratio, 1.0 - clip_param, 1.0 + clip_param) * ch_ratio * atarg #
+    surr3 = tf.clip_by_value(ch_ratio, 1.0 - clip_param, 1.0 + clip_param) * ac_ratio * atarg
+    surr4 = tf.clip_by_value(ch_ratio, 1.0 - clip_param, 1.0 + clip_param) * tf.clip_by_value(ac_ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg
+
+    pol_surr = - tf.reduce_mean(tf.minimum(tf.minimum(tf.minimum(surr1, surr2),surr3),surr4)) # PPO's pessimistic surrogate (L^CLIP)
     vf_loss = tf.reduce_mean(tf.square(pi.vpred - ret))
     total_loss = pol_surr + pol_entpen + vf_loss
     losses = [pol_surr, pol_entpen, vf_loss, meankl, meanent]
