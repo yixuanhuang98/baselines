@@ -25,7 +25,9 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     vpreds = np.zeros(horizon, 'float32')
     news = np.zeros(horizon, 'int32')
     acs = np.array([ac for _ in range(horizon)])
+    chs = np.zeros(horizon, 'int32')
     prevacs = acs.copy()
+    prevchs = chs.copy()
 
     while True:
         prevac = ac
@@ -47,6 +49,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
         news[i] = new
         acs[i] = ac
         prevacs[i] = prevac
+
 
         ob, rew, new, _ = env.step(ac)
         rews[i] = rew
@@ -100,11 +103,11 @@ def learn(env, policy_fn, *,
     clip_param = clip_param * lrmult # Annealed clipping parameter epsilon
 
     ob = U.get_placeholder_cached(name="ob")
+
+    #TODO: hack here, will fix later
+    ch = pi.choice
     ac = pi.pdtype.sample_placeholder([None])
 
-    #TODO: check if choice should also be sampled
-    ch = pi.cpdtype.sample_placeholder([None])
-    
     kloldnew = oldpi.pd.kl(pi.pd)
     ckloldnew = oldpi.cpd.kl(pi.cpd)
     ent = pi.pd.entropy()
