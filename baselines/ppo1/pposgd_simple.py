@@ -103,8 +103,8 @@ def learn(env, policy_fn, *,
     ac = pi.pdtype.sample_placeholder([None])
 
     #TODO: check if choice should also be sampled
-    ch = pi.choice
-
+    ch = pi.cpdtype.sample_placeholder([None])
+    
     kloldnew = oldpi.pd.kl(pi.pd)
     ckloldnew = oldpi.cpd.kl(pi.cpd)
     ent = pi.pd.entropy()

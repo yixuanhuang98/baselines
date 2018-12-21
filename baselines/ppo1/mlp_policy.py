@@ -31,49 +31,63 @@ class MlpPolicy(object):
                 last_out = tf.nn.tanh(tf.layers.dense(last_out, hid_size, name="fc%i"%(i+1), kernel_initializer=U.normc_initializer(1.0)))
             self.vpred = tf.layers.dense(last_out, 1, name='final', kernel_initializer=U.normc_initializer(1.0))[:,0]
 
-        with tf.variable_scope('pol'):
+        with tf.variable_scope('dec'):
             last_out = obz
             for i in range(num_hid_layers):
                 last_out = tf.nn.tanh(tf.layers.dense(last_out, hid_size, name='fc%i'%(i+1), kernel_initializer=U.normc_initializer(1.0)))
+
             if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
-
-                # run each sub-actor
-                for i in range(num_actors):
-                    self.actors.append(tf.layers.dense(obz,pdtype.param_shape()[0]//2,name="sub%i"%(i),kernel_initializer=U.normc_initializer(0.01)))
-
                 # get the hidden_dicision
                 # TODO: compare: the output layer be cpdtype.param_shape()[0]//2 or hid_size?
                 hidden_decision = tf.nn.tanh(tf.layers.dense(last_out, hid_size, name="decider", kernel_initializer=U.normc_initializer(0.01), use_bias=False))
                 hdlogstd = tf.get_variable(name="hdlogstd", shape=[1, hid_size], initializer=tf.zeros_initializer())
                 cpdparam = tf.concat([hidden_decision, hidden_decision * 0.0 + hdlogstd], axis=1)
-
-                # get the choice probability distribution
-                self.cpd = cpdtype.pdfromflat(cpdparam)
-                #TODO: not sure of sampling or mode
-                self.choice = choice =self.cpd.sample()
-
-                # fetch the according action prob distribution
-                print(tf.shape(choice))
-
-                # TODO: convert the choice tensor to a integer
-                mean = self.actors[0]
-                logstd = tf.get_variable(name="logstd", shape=[1, pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
-                pdparam = tf.concat([mean, mean * 0.0 + logstd], axis=1)
             else:
-                pdparam = tf.layers.dense(last_out, pdtype.param_shape()[0], name='final', kernel_initializer=U.normc_initializer(0.01))
+                pdparam =  tf.nn.tanh(tf.layers.dense(last_out, hid_size, name="decider", kernel_initializer=U.normc_initializer(0.01)))
 
-        self.pd = pdtype.pdfromflat(pdparam)
+            # get the choice probability distribution
+            self.cpd = cpdtype.pdfromflat(cpdparam)
+            #TODO: not sure of sampling or mode
+            ch =self.cpd.sample()
+
+        with tf.variable_scope('pol'):
+            last_out = obz
+
+            pdparams = []
+
+            for i in range(num_hid_layers):
+                last_out = tf.nn.tanh(tf.layers.dense(last_out, hid_size, name='fc%i'%(i+1), kernel_initializer=U.normc_initializer(1.0)))
+            if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
+                actors = []
+                logstds = []
+                # run each sub-actor
+                for i in range(num_actors):
+                    actors.append(tf.layers.dense(obz,pdtype.param_shape()[0]//2,name="sub%i"%(i),kernel_initializer=U.normc_initializer(0.01)))
+                    logstds.append(tf.get_variable(name="logstd%i"%i, shape=[1, pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer()))
+                    pdparams.append(tf.concat([actors[i], actors[i] * 0.0 + logstds[i]], axis=1))
+            else:
+                for i in range(num_actors):
+                    pdparams.append(tf.layers.dense(last_out, pdtype.param_shape()[0], name="final%i"%(i), kernel_initializer=U.normc_initializer(0.01)))
+
+        self.pd =[]
+        ac = []
+
+        stochastic = tf.placeholder(dtype=tf.bool, shape=())
+
+        for i in range(num_actors):
+            self.pd.append(pdtype.pdfromflat(pdparams[i]))
+            ac.append(U.switch(stochastic, self.pd[i].sample(), self.pd[i].mode()))
 
         self.state_in = []
         self.state_out = []
 
-        stochastic = tf.placeholder(dtype=tf.bool, shape=())
-        ac = U.switch(stochastic, self.pd.sample(), self.pd.mode())
-        self._act = U.function([stochastic, ob], [ac, self.vpred])
+        self._act = U.function([stochastic, ob], [ac, ch, self.vpred])
+
 
     def act(self, stochastic, ob):
-        ac1, vpred1 =  self._act(stochastic, ob[None])
-        return ac1[0], vpred1[0]
+        ac1, ch1, vpred1 =  self._act(stochastic, ob[None])
+        self.pd = self.pd[ch1[0]]
+        return ac1[ch1[0]][0], ch1[0], vpred1[0]
     def get_variables(self):
         return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.scope)
     def get_trainable_variables(self):
