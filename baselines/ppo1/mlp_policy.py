@@ -45,7 +45,6 @@ class MlpPolicy(object):
         #TODO: not sure of sampling or mode
         self.choice = ch =self.cpd.sample()
 
-
         with tf.variable_scope('pol'):
             last_out = obz
             for i in range(num_hid_layers):
@@ -58,12 +57,9 @@ class MlpPolicy(object):
                 for i in range(num_actors):
                     actors.append(tf.layers.dense(obz,pdtype.param_shape()[0]//2,name="sub%i"%(i),kernel_initializer=U.normc_initializer(0.01)))
 
-                actors = tf.stack(actors)
-                #print(tf.shape(actors))
-                #print(tf.shape(choice))
-                #print(choice[0])
-                mean = actors[ch[0]]
-                #print(tf.shape(mean))
+                self.actors = tf.stack(actors)
+
+                mean = self.actors[ch[0]]
                 logstd = tf.get_variable(name="logstd", shape=[1, pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
                 pdparam = tf.concat([mean, mean * 0.0 + logstd], axis=1)
             else:
@@ -82,7 +78,27 @@ class MlpPolicy(object):
 
     def act(self, stochastic, ob):
         ac1,ch1, vpred1 =  self._act(stochastic, ob[None])
-        return ac1[0], vpred1[0]
+        return ac1[0],ch1[0], vpred1[0]
+
+    def createPd(self,i,choice,ac_space, gaussian_fixed_var=True):
+        print(i)
+        i = tf.cast(i,tf.int32)
+        ch = choice[i]
+        mean = tf.reshape(self.actors[ch][i],[1,self.pdtype.param_shape()[0]//2])
+        if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
+            logstd = tf.get_variable(name="logstd", shape=[1, self.pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
+            pdparam = tf.concat([mean, mean * 0.0 + logstd], axis=1)
+        else:
+            pdparam = mean
+        return pdparam
+
+    def pd_given_ch(self, choice,ac_space, gaussian_fixed_var=True):
+        shape = tf.shape(choice)[0]
+        r = tf.range(shape,dtype=tf.int32)
+        r = tf.cast(r,tf.float32)
+        pdparams = tf.map_fn(lambda x: self.createPd(x,choice,ac_space), r)
+        return self.pdtype.pdfromflat(pdparams)
+
     def get_variables(self):
         return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.scope)
     def get_trainable_variables(self):
