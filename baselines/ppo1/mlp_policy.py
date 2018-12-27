@@ -42,8 +42,7 @@ class MlpPolicy(object):
 
         # get the choice probability distribution
         self.cpd = cpdtype.pdfromflat(hidden_decision)
-        #TODO: not sure of sampling or mode
-        self.choice = ch =self.cpd.sample()
+        self.choice = ch = U.switch(stochastic, self.cpd.sample(), self.cpd.mode())
 
         with tf.variable_scope('pol'):
             last_out = obz
@@ -85,7 +84,6 @@ class MlpPolicy(object):
 
         stochastic = tf.placeholder(dtype=tf.bool, shape=())
         ac = U.switch(stochastic, self.pd.sample(), self.pd.mode())
-        #print(tf.shape(ac))
 
         self._act = U.function([stochastic, ob], [ac,ch,self.vpred])
 
@@ -112,13 +110,15 @@ class MlpPolicy(object):
         ch_nd = tf.stack([choice,r],axis=1)
 
         mean = tf.gather_nd(self.actors, ch_nd)
-        if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
-            print("!!!!")
 
-            logstd = tf.get_variable(name="logstd", shape=[1, self.pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
-            pdparams = tf.concat([mean, mean * 0.0 + logstd], axis=1)
-        else:
-            pdparams = mean
+        with tf.variable_scope('pol'):
+            if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
+                print("!!!!")
+
+                logstd = tf.get_variable(name="logstd", shape=[1, self.pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
+                pdparams = tf.concat([mean, mean * 0.0 + logstd], axis=1)
+            else:
+                pdparams = mean
         return self.pdtype.pdfromflat(pdparams)
 
     def get_variables(self):

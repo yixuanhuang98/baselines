@@ -203,7 +203,6 @@ def learn(env, policy_fn, *,
         logger.log("Evaluating losses...")
         losses = []
         for batch in d.iterate_once(optim_batchsize):
-            #print(batch["ch"].shape)
             newlosses = compute_losses(batch["ob"], batch["ac"],batch["ch"], batch["atarg"], batch["vtarg"], cur_lrmult)
             losses.append(newlosses)
         meanlosses,_,_ = mpi_moments(losses, axis=0)
