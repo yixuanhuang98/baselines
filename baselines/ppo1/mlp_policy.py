@@ -52,6 +52,8 @@ class MlpPolicy(object):
 
 
             if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
+
+                print("!!!")
                 actors = []
                 # run each sub-actor
                 for i in range(num_actors):
@@ -59,10 +61,21 @@ class MlpPolicy(object):
 
                 self.actors = tf.stack(actors)
 
-                mean = self.actors[ch[0]]
+                ch = tf.reshape(ch,[-1])
+                #print(tf.shape(ch))
+                #print(tf.shape(self.actors))
+                #assert(tf.shape(ch)[1] == tf.shape(self.actors)[1])
+                r = tf.range(tf.shape(ch)[0])
+                ch = tf.cast(ch,tf.int32)
+
+                ch_nd = tf.stack([ch,r],axis=1)
+
+                mean = tf.gather_nd(self.actors, ch_nd)
                 logstd = tf.get_variable(name="logstd", shape=[1, pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
                 pdparam = tf.concat([mean, mean * 0.0 + logstd], axis=1)
             else:
+                print("???")
+
                 pdparam = tf.layers.dense(last_out, pdtype.param_shape()[0], name='final', kernel_initializer=U.normc_initializer(0.01))
 
         self.pd = pdtype.pdfromflat(pdparam)
@@ -78,13 +91,12 @@ class MlpPolicy(object):
 
     def act(self, stochastic, ob):
         ac1,ch1, vpred1 =  self._act(stochastic, ob[None])
-        return ac1[0],ch1[0], vpred1[0]
+        return ac1[0],ch1, vpred1[0]
 
     def createPd(self,i,choice,ac_space, gaussian_fixed_var=True):
-        print(i)
         i = tf.cast(i,tf.int32)
-        ch = choice[i]
-        mean = tf.reshape(self.actors[ch][i],[1,self.pdtype.param_shape()[0]//2])
+        choice = tf.reshape(choice)
+        mean = tf.batch_gather(self.actors, tf.reshape(ch,[-1]))
         if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
             logstd = tf.get_variable(name="logstd", shape=[1, self.pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
             pdparam = tf.concat([mean, mean * 0.0 + logstd], axis=1)
@@ -93,10 +105,20 @@ class MlpPolicy(object):
         return pdparam
 
     def pd_given_ch(self, choice,ac_space, gaussian_fixed_var=True):
-        shape = tf.shape(choice)[0]
-        r = tf.range(shape,dtype=tf.int32)
-        r = tf.cast(r,tf.float32)
-        pdparams = tf.map_fn(lambda x: self.createPd(x,choice,ac_space), r)
+        choice = tf.reshape(choice,[-1])
+        choice = tf.cast(choice,tf.int32)
+
+        r = tf.range(tf.shape(choice)[0])
+        ch_nd = tf.stack([choice,r],axis=1)
+
+        mean = tf.gather_nd(self.actors, ch_nd)
+        if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
+            print("!!!!")
+
+            logstd = tf.get_variable(name="logstd", shape=[1, self.pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
+            pdparams = tf.concat([mean, mean * 0.0 + logstd], axis=1)
+        else:
+            pdparams = mean
         return self.pdtype.pdfromflat(pdparams)
 
     def get_variables(self):

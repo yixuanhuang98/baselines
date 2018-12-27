@@ -25,7 +25,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     vpreds = np.zeros(horizon, 'float32')
     news = np.zeros(horizon, 'int32')
     acs = np.array([ac for _ in range(horizon)])
-    chs = np.zeros(horizon, 'int32')
+    chs = np.array([[0] for _ in range(horizon)])
     prevacs = acs.copy()
     prevchs = chs.copy()
 
