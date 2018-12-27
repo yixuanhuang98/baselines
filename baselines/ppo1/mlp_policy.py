@@ -47,38 +47,22 @@ class MlpPolicy(object):
 
         with tf.variable_scope('pol'):
             last_outs = []
-            for k in range(num_actors):
-                last_outs.append(obz)
-                for i in range(num_hid_layers-1):
-                    last_outs[k] = tf.nn.tanh(tf.layers.dense(last_outs[k], hid_size, name='fc%i%i'%(i+1,k), kernel_initializer=U.normc_initializer(1.0)))
+            actors = []
+            for i in range(num_actors):
+                last_outs.append(tf.layers.dense(obz, hid_size, name='sub%i'%(i+1), kernel_initializer=U.normc_initializer(1.0)))
+                actors.append(tf.layers.dense(last_outs[i],pdtype.param_shape()[0]//2,name="final%i"%(i+1),kernel_initializer=U.normc_initializer(0.01)))
 
+            self.actors = tf.stack(actors)
 
-            if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
+            ch = tf.reshape(ch,[-1])
+            r = tf.range(tf.shape(ch)[0])
+            ch = tf.cast(ch,tf.int32)
 
-                print("!!!")
-                actors = []
-                # run each sub-actor
-                for i in range(num_actors):
-                    actors.append(tf.layers.dense(last_outs[i],pdtype.param_shape()[0]//2,name="sub%i"%(i),kernel_initializer=U.normc_initializer(0.01)))
+            ch_nd = tf.stack([ch,r],axis=1)
 
-                self.actors = tf.stack(actors)
-
-                ch = tf.reshape(ch,[-1])
-                #print(tf.shape(ch))
-                #print(tf.shape(self.actors))
-                #assert(tf.shape(ch)[1] == tf.shape(self.actors)[1])
-                r = tf.range(tf.shape(ch)[0])
-                ch = tf.cast(ch,tf.int32)
-
-                ch_nd = tf.stack([ch,r],axis=1)
-
-                mean = tf.gather_nd(self.actors, ch_nd)
-                logstd = tf.get_variable(name="logstd", shape=[1, pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
-                pdparam = tf.concat([mean, mean * 0.0 + logstd], axis=1)
-            else:
-                print("???")
-
-                pdparam = tf.layers.dense(last_outs[0], pdtype.param_shape()[0], name='final', kernel_initializer=U.normc_initializer(0.01))
+            mean = tf.gather_nd(self.actors, ch_nd)
+            logstd = tf.get_variable(name="logstd", shape=[1, pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
+            pdparam = tf.concat([mean, mean * 0.0 + logstd], axis=1)
 
         self.pd = pdtype.pdfromflat(pdparam)
 
@@ -94,17 +78,6 @@ class MlpPolicy(object):
         ac1,ch1, vpred1 =  self._act(stochastic, ob[None])
         return ac1[0],ch1, vpred1[0]
 
-    def createPd(self,i,choice,ac_space, gaussian_fixed_var=True):
-        i = tf.cast(i,tf.int32)
-        choice = tf.reshape(choice)
-        mean = tf.batch_gather(self.actors, tf.reshape(ch,[-1]))
-        if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
-            logstd = tf.get_variable(name="logstd", shape=[1, self.pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
-            pdparam = tf.concat([mean, mean * 0.0 + logstd], axis=1)
-        else:
-            pdparam = mean
-        return pdparam
-
     def pd_given_ch(self, choice,ac_space, gaussian_fixed_var=True):
         choice = tf.reshape(choice,[-1])
         choice = tf.cast(choice,tf.int32)
@@ -115,13 +88,8 @@ class MlpPolicy(object):
         mean = tf.gather_nd(self.actors, ch_nd)
 
         with tf.variable_scope('pol'):
-            if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
-                print("!!!!")
-
-                logstd = tf.get_variable(name="logstd", shape=[1, self.pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
-                pdparams = tf.concat([mean, mean * 0.0 + logstd], axis=1)
-            else:
-                pdparams = mean
+            logstd = tf.get_variable(name="logstd", shape=[1, self.pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
+            pdparams = tf.concat([mean, mean * 0.0 + logstd], axis=1)
         return self.pdtype.pdfromflat(pdparams)
 
     def get_variables(self):
