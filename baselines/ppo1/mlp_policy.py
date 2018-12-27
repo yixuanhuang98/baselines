@@ -42,12 +42,15 @@ class MlpPolicy(object):
 
         # get the choice probability distribution
         self.cpd = cpdtype.pdfromflat(hidden_decision)
+        #TODO: not sure of sampling or mode
         self.choice = ch =self.cpd.sample()
 
         with tf.variable_scope('pol'):
-            last_out = obz
-            for i in range(num_hid_layers):
-                last_out = tf.nn.tanh(tf.layers.dense(last_out, hid_size, name='fc%i'%(i+1), kernel_initializer=U.normc_initializer(1.0)))
+            last_outs = []
+            for k in range(num_actors):
+                last_outs.append(obz)
+                for i in range(num_hid_layers-1):
+                    last_outs[k] = tf.nn.tanh(tf.layers.dense(last_outs[k], hid_size, name='fc%i%i'%(i+1,k), kernel_initializer=U.normc_initializer(1.0)))
 
 
             if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
@@ -56,7 +59,7 @@ class MlpPolicy(object):
                 actors = []
                 # run each sub-actor
                 for i in range(num_actors):
-                    actors.append(tf.layers.dense(obz,pdtype.param_shape()[0]//2,name="sub%i"%(i),kernel_initializer=U.normc_initializer(0.01)))
+                    actors.append(tf.layers.dense(last_outs[i],pdtype.param_shape()[0]//2,name="sub%i"%(i),kernel_initializer=U.normc_initializer(0.01)))
 
                 self.actors = tf.stack(actors)
 
@@ -75,7 +78,7 @@ class MlpPolicy(object):
             else:
                 print("???")
 
-                pdparam = tf.layers.dense(last_out, pdtype.param_shape()[0], name='final', kernel_initializer=U.normc_initializer(0.01))
+                pdparam = tf.layers.dense(last_outs[0], pdtype.param_shape()[0], name='final', kernel_initializer=U.normc_initializer(0.01))
 
         self.pd = pdtype.pdfromflat(pdparam)
 
