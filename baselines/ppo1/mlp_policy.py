@@ -42,7 +42,7 @@ class MlpPolicy(object):
 
         # get the choice probability distribution
         self.cpd = cpdtype.pdfromflat(hidden_decision)
-        self.choice = ch = U.switch(stochastic, self.cpd.sample(), self.cpd.mode())
+        self.choice = ch =self.cpd.sample()
 
         with tf.variable_scope('pol'):
             last_out = obz

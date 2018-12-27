@@ -7,7 +7,7 @@ from baselines import logger
 import gym
 
 def train(num_timesteps, seed, model_path=None, num_actors=1):
-    env_id = 'Humanoid-v2'
+    env_id = 'Swimmer-v2'
     from baselines.ppo1 import mlp_policy, pposgd_simple
     U.make_session(num_cpu=1).__enter__()
     def policy_fn(name, ob_space, ac_space):
