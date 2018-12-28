@@ -36,7 +36,7 @@ class FcnPolicy(object):
 
             # get the hidden_dicision
             # TODO: compare: the output layer be cpdtype.param_shape()[0]//2 or hid_size?
-            hidden_decision = tf.layers.dense(last_out, num_actors, name="final", kernel_initializer=U.normc_initializer(0.01), use_bias=False)
+            hidden_decision = tf.layers.dense(last_out, num_actors, name="final", kernel_initializer=U.normc_initializer(0.01))
 
         # get the choice probability distribution
         self.cpd = cpdtype.pdfromflat(hidden_decision)
