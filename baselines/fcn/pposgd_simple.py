@@ -90,7 +90,9 @@ def learn(env, policy_fn, *,
         callback=None, # you can do anything in the callback, since it takes locals(), globals()
         adam_epsilon=1e-5,
         schedule='constant', # annealing for stepsize parameters (epsilon and adam)
-        env_name = ""
+        env_name = "",
+        seed = 0,
+        ratio = 0.1
         ):
     # Setup losses and stuff
     # ----------------------------------------
@@ -235,8 +237,8 @@ def learn(env, policy_fn, *,
         if MPI.COMM_WORLD.Get_rank()==0:
             logger.dump_tabular()
 
-    np.savetxt('./baselines/fcn/data/'+env_name+'_rew.txt',np.asarray(reward_list))
-    np.savetxt('./baselines/fcn/data/'+env_name+'_ts.txt',np.asarray(timestep_list))
+    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(ratio)+'_rew.txt',np.asarray(reward_list))
+    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(ratio)+'_ts.txt',np.asarray(timestep_list))
 
     return pi
 

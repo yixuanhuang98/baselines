@@ -6,8 +6,7 @@ from baselines import logger
 
 import gym
 
-def train(num_timesteps, seed, model_path=None):
-    env_id = 'Swimmer-v2'
+def train(env_id,num_timesteps, seed, model_path=None, ratio=0.1):
     from baselines.linear import linear_policy, pposgd_simple
     U.make_session(num_cpu=1).__enter__()
     def policy_fn(name, ob_space, ac_space):
@@ -18,7 +17,7 @@ def train(num_timesteps, seed, model_path=None):
     # parameters below were the best found in a simple random search
     # these are good enough to make humanoid walk, but whether those are
     # an absolute best or not is not certain
-    env = RewScale(env, 1)
+    env = RewScale(env, ratio)
     pi = pposgd_simple.learn(env, policy_fn,
             max_timesteps=num_timesteps,
             timesteps_per_actorbatch=2048,
@@ -29,7 +28,9 @@ def train(num_timesteps, seed, model_path=None):
             gamma=0.99,
             lam=0.95,
             schedule='linear',
-            env_name=env_id,
+            env_name= env_id,
+            seed = seed,
+            ratio = ratio
         )
     env.close()
     if model_path:
@@ -54,7 +55,7 @@ def main():
 
     if not args.play:
         # train the model
-        train(num_timesteps=args.num_timesteps, seed=args.seed, model_path=args.model_path)
+        train(env_id = args.env,num_timesteps=args.num_timesteps, seed=args.seed, model_path=args.model_path, ratio=args.reward_scale)
     else:
         # construct the model object, load pre-trained model and render
         pi = train(num_timesteps=1, seed=args.seed)
