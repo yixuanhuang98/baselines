@@ -92,7 +92,7 @@ def learn(env, policy_fn, *,
         schedule='constant', # annealing for stepsize parameters (epsilon and adam)
         env_name = "",
         seed = 0,
-        ratio = 0.1
+        scale = 0.1
         ):
     # Setup losses and stuff
     # ----------------------------------------
@@ -237,8 +237,8 @@ def learn(env, policy_fn, *,
         if MPI.COMM_WORLD.Get_rank()==0:
             logger.dump_tabular()
 
-    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(ratio)+'_rew.txt',np.asarray(reward_list))
-    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(ratio)+'_ts.txt',np.asarray(timestep_list))
+    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_rew.txt',np.asarray(reward_list))
+    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_ts.txt',np.asarray(timestep_list))
 
     return pi
 

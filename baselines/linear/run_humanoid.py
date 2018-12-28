@@ -30,7 +30,7 @@ def train(env_id,num_timesteps, seed, model_path=None, ratio=0.1):
             schedule='linear',
             env_name= env_id,
             seed = seed,
-            ratio = ratio
+            scale = ratio
         )
     env.close()
     if model_path:
