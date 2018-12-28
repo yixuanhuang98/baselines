@@ -7,7 +7,7 @@ from baselines import logger
 import gym
 
 def train(num_timesteps, seed, model_path=None):
-    env_id = 'HalfCheetah-v2'
+    env_id = 'Swimmer-v2'
     from baselines.ppo1 import mlp_policy, pposgd_simple
     U.make_session(num_cpu=1).__enter__()
     def policy_fn(name, ob_space, ac_space):
@@ -18,7 +18,7 @@ def train(num_timesteps, seed, model_path=None):
     # parameters below were the best found in a simple random search
     # these are good enough to make humanoid walk, but whether those are
     # an absolute best or not is not certain
-    env = RewScale(env, 0.1)
+    env = RewScale(env, 1)
     pi = pposgd_simple.learn(env, policy_fn,
             max_timesteps=num_timesteps,
             timesteps_per_actorbatch=2048,
