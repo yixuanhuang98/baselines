@@ -29,7 +29,7 @@ def train(num_timesteps, seed, model_path=None, num_actors=1):
             gamma=0.99,
             lam=0.95,
             schedule='linear',
-            name= env_id
+            env_name= env_id
         )
     env.close()
     if model_path:

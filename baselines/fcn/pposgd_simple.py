@@ -90,7 +90,7 @@ def learn(env, policy_fn, *,
         callback=None, # you can do anything in the callback, since it takes locals(), globals()
         adam_epsilon=1e-5,
         schedule='constant', # annealing for stepsize parameters (epsilon and adam)
-        name = ""
+        env_name = ""
         ):
     # Setup losses and stuff
     # ----------------------------------------
@@ -161,6 +161,8 @@ def learn(env, policy_fn, *,
     timestep_list = []
 
     while True:
+        print(env_name)
+
         if callback: callback(locals(), globals())
         if max_timesteps and timesteps_so_far >= max_timesteps:
             break
@@ -233,8 +235,8 @@ def learn(env, policy_fn, *,
         if MPI.COMM_WORLD.Get_rank()==0:
             logger.dump_tabular()
 
-    np.savetxt('./baselines/fcn/data/'+name+'_rewards.txt',np.asarray(reward_list))
-    np.savetxt('./baselines/fcn/data/'+name+'_ts.txt',np.asarray(timestep_list))
+    np.savetxt('./baselines/fcn/data/'+env_name+'_rewards.txt',np.asarray(reward_list))
+    np.savetxt('./baselines/fcn/data/'+env_name+'_ts.txt',np.asarray(timestep_list))
 
     return pi
 

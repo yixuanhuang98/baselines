@@ -32,7 +32,6 @@ class FcnPolicy(object):
 
         with tf.variable_scope('dec'):
             last_out = obz
-
             last_out = tf.layers.dense(last_out, hid_size, name='dec', kernel_initializer=U.normc_initializer(1.0))
 
             # get the hidden_dicision
