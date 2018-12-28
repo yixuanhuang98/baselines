@@ -7,7 +7,7 @@ from baselines import logger
 import gym
 
 def train(num_timesteps, seed, model_path=None):
-    env_id = 'HalfCheetah-v2'
+    env_id = 'Swimmer-v2'
     from baselines.linear import linear_policy, pposgd_simple
     U.make_session(num_cpu=1).__enter__()
     def policy_fn(name, ob_space, ac_space):
