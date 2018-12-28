@@ -18,7 +18,7 @@ def train(num_timesteps, seed, model_path=None, num_actors=1):
     # parameters below were the best found in a simple random search
     # these are good enough to make humanoid walk, but whether those are
     # an absolute best or not is not certain
-    env = RewScale(env, 0.1)
+    env = RewScale(env,1)
     pi = pposgd_simple.learn(env, policy_fn,
             max_timesteps=num_timesteps,
             timesteps_per_actorbatch=2048,
