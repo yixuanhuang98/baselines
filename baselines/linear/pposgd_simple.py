@@ -218,8 +218,8 @@ def learn(env, policy_fn, *,
         if MPI.COMM_WORLD.Get_rank()==0:
             logger.dump_tabular()
 
-    np.savetxt('./baselines/ppo1/data/'+name+'_rewards.txt',np.asarray(reward_list))
-    np.savetxt('./baselines/ppo1/data/'+name+'_ts.txt',np.asarray(timestep_list))
+    np.savetxt('./baselines/linear/data/'+name+'_rewards.txt',np.asarray(reward_list))
+    np.savetxt('./baselines/linear/data/'+name+'_ts.txt',np.asarray(timestep_list))
 
     return pi
 

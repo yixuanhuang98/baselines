@@ -25,17 +25,19 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     vpreds = np.zeros(horizon, 'float32')
     news = np.zeros(horizon, 'int32')
     acs = np.array([ac for _ in range(horizon)])
+    chs = np.array([[0] for _ in range(horizon)])
     prevacs = acs.copy()
+    prevchs = chs.copy()
 
     while True:
         prevac = ac
-        ac, vpred = pi.act(stochastic, ob)
+        ac,ch, vpred = pi.act(stochastic, ob)
         # Slight weirdness here because we need value function at time T
         # before returning segment [0, T-1] so we get the correct
         # terminal value
         if t > 0 and t % horizon == 0:
             yield {"ob" : obs, "rew" : rews, "vpred" : vpreds, "new" : news,
-                    "ac" : acs, "prevac" : prevacs, "nextvpred": vpred * (1 - new),
+                    "ac" : acs, "ch":chs, "prevac" : prevacs, "nextvpred": vpred * (1 - new),
                     "ep_rets" : ep_rets, "ep_lens" : ep_lens}
             # Be careful!!! if you change the downstream algorithm to aggregate
             # several of these batches, then be sure to do a deepcopy
@@ -46,7 +48,9 @@ def traj_segment_generator(pi, env, horizon, stochastic):
         vpreds[i] = vpred
         news[i] = new
         acs[i] = ac
+        chs[i] = ch
         prevacs[i] = prevac
+
 
         ob, rew, new, _ = env.step(ac)
         rews[i] = rew
@@ -86,7 +90,7 @@ def learn(env, policy_fn, *,
         callback=None, # you can do anything in the callback, since it takes locals(), globals()
         adam_epsilon=1e-5,
         schedule='constant', # annealing for stepsize parameters (epsilon and adam)
-        name=""
+        name = ""
         ):
     # Setup losses and stuff
     # ----------------------------------------
@@ -101,30 +105,41 @@ def learn(env, policy_fn, *,
     clip_param = clip_param * lrmult # Annealed clipping parameter epsilon
 
     ob = U.get_placeholder_cached(name="ob")
+
+    ch = pi.cpdtype.sample_placeholder([None])
     ac = pi.pdtype.sample_placeholder([None])
 
-    kloldnew = oldpi.pd.kl(pi.pd)
+    old_pi_pd = oldpi.pd_given_ch(ch,ac_space)
+
+    kloldnew = old_pi_pd.kl(pi.pd)
+    ckloldnew = oldpi.cpd.kl(pi.cpd)
     ent = pi.pd.entropy()
-    meankl = tf.reduce_mean(kloldnew)
-    meanent = tf.reduce_mean(ent)
+    cent = pi.cpd.entropy()
+    meankl = tf.reduce_mean(kloldnew) + tf.reduce_mean(ckloldnew)
+    meanent = tf.reduce_mean(cent) + tf.reduce_mean(ent)
     pol_entpen = (-entcoeff) * meanent
 
-    ratio = tf.exp(pi.pd.logp(ac) - oldpi.pd.logp(ac)) # pnew / pold
-    surr1 = ratio * atarg # surrogate from conservative policy iteration
-    surr2 = tf.clip_by_value(ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg #
-    pol_surr = - tf.reduce_mean(tf.minimum(surr1, surr2)) # PPO's pessimistic surrogate (L^CLIP)
+    ac_ratio = tf.exp(pi.pd.logp(ac) - old_pi_pd.logp(ac)) # pnew / pold
+    ch_ratio = tf.exp(pi.cpd.logp(ch) - oldpi.cpd.logp(ch))
+
+    surr1 = ac_ratio * ch_ratio * atarg # surrogate from conservative policy iteration
+    surr2 = tf.clip_by_value(ac_ratio, 1.0 - clip_param, 1.0 + clip_param) * ch_ratio * atarg #
+    surr3 = tf.clip_by_value(ch_ratio, 1.0 - clip_param, 1.0 + clip_param) * ac_ratio * atarg
+    surr4 = tf.clip_by_value(ch_ratio, 1.0 - clip_param, 1.0 + clip_param) * tf.clip_by_value(ac_ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg
+
+    pol_surr = - tf.reduce_mean(tf.minimum(tf.minimum(tf.minimum(surr1, surr2),surr3),surr4)) # PPO's pessimistic surrogate (L^CLIP)
     vf_loss = tf.reduce_mean(tf.square(pi.vpred - ret))
     total_loss = pol_surr + pol_entpen + vf_loss
     losses = [pol_surr, pol_entpen, vf_loss, meankl, meanent]
     loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
 
     var_list = pi.get_trainable_variables()
-    lossandgrad = U.function([ob, ac, atarg, ret, lrmult], losses + [U.flatgrad(total_loss, var_list)])
+    lossandgrad = U.function([ob, ac,ch, atarg, ret, lrmult], losses + [U.flatgrad(total_loss, var_list)])
     adam = MpiAdam(var_list, epsilon=adam_epsilon)
 
     assign_old_eq_new = U.function([],[], updates=[tf.assign(oldv, newv)
         for (oldv, newv) in zipsame(oldpi.get_variables(), pi.get_variables())])
-    compute_losses = U.function([ob, ac, atarg, ret, lrmult], losses)
+    compute_losses = U.function([ob, ac,ch, atarg, ret, lrmult], losses)
 
     U.initialize()
     adam.sync()
@@ -169,10 +184,10 @@ def learn(env, policy_fn, *,
         add_vtarg_and_adv(seg, gamma, lam)
 
         # ob, ac, atarg, ret, td1ret = map(np.concatenate, (obs, acs, atargs, rets, td1rets))
-        ob, ac, atarg, tdlamret = seg["ob"], seg["ac"], seg["adv"], seg["tdlamret"]
+        ob, ac,ch, atarg, tdlamret = seg["ob"], seg["ac"], seg["ch"], seg["adv"], seg["tdlamret"]
         vpredbefore = seg["vpred"] # predicted value function before udpate
         atarg = (atarg - atarg.mean()) / atarg.std() # standardized advantage function estimate
-        d = Dataset(dict(ob=ob, ac=ac, atarg=atarg, vtarg=tdlamret), shuffle=not pi.recurrent)
+        d = Dataset(dict(ob=ob, ac=ac, ch=ch, atarg=atarg, vtarg=tdlamret), shuffle=not pi.recurrent)
         optim_batchsize = optim_batchsize or ob.shape[0]
 
         if hasattr(pi, "ob_rms"): pi.ob_rms.update(ob) # update running mean/std for policy
@@ -184,7 +199,7 @@ def learn(env, policy_fn, *,
         for _ in range(optim_epochs):
             losses = [] # list of tuples, each of which gives the loss for a minibatch
             for batch in d.iterate_once(optim_batchsize):
-                *newlosses, g = lossandgrad(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
+                *newlosses, g = lossandgrad(batch["ob"], batch["ac"],batch["ch"], batch["atarg"], batch["vtarg"], cur_lrmult)
                 adam.update(g, optim_stepsize * cur_lrmult)
                 losses.append(newlosses)
             logger.log(fmt_row(13, np.mean(losses, axis=0)))
@@ -192,7 +207,7 @@ def learn(env, policy_fn, *,
         logger.log("Evaluating losses...")
         losses = []
         for batch in d.iterate_once(optim_batchsize):
-            newlosses = compute_losses(batch["ob"], batch["ac"], batch["atarg"], batch["vtarg"], cur_lrmult)
+            newlosses = compute_losses(batch["ob"], batch["ac"],batch["ch"], batch["atarg"], batch["vtarg"], cur_lrmult)
             losses.append(newlosses)
         meanlosses,_,_ = mpi_moments(losses, axis=0)
         logger.log(fmt_row(13, meanlosses))
@@ -207,9 +222,9 @@ def learn(env, policy_fn, *,
         logger.record_tabular("EpLenMean", np.mean(lenbuffer))
         logger.record_tabular("EpRewMean", np.mean(rewbuffer))
         logger.record_tabular("EpThisIter", len(lens))
+        reward_list.append(np.mean(rewbuffer))
         episodes_so_far += len(lens)
         timesteps_so_far += sum(lens)
-        reward_list.append(np.mean(rewbuffer))
         iters_so_far += 1
         logger.record_tabular("EpisodesSoFar", episodes_so_far)
         logger.record_tabular("TimestepsSoFar", timesteps_so_far)
@@ -218,8 +233,8 @@ def learn(env, policy_fn, *,
         if MPI.COMM_WORLD.Get_rank()==0:
             logger.dump_tabular()
 
-    np.savetxt('./baselines/ppo1/data/'+name+'_rewards.txt',np.asarray(reward_list))
-    np.savetxt('./baselines/ppo1/data/'+name+'_ts.txt',np.asarray(timestep_list))
+    np.savetxt('./baselines/fcn/data/'+name+'_rewards.txt',np.asarray(reward_list))
+    np.savetxt('./baselines/fcn/data/'+name+'_ts.txt',np.asarray(timestep_list))
 
     return pi
 

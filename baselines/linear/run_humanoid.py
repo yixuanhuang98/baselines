@@ -8,10 +8,10 @@ import gym
 
 def train(num_timesteps, seed, model_path=None):
     env_id = 'Humanoid-v2'
-    from baselines.ppo1 import mlp_policy, pposgd_simple
+    from baselines.linear import linear_policy, pposgd_simple
     U.make_session(num_cpu=1).__enter__()
     def policy_fn(name, ob_space, ac_space):
-        return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
+        return linear_policy.LinearPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
             hid_size=64, num_hid_layers=2)
     env = make_mujoco_env(env_id, seed)
 
