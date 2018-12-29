@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-env_id = "Walker2d-v2"
-seeds = [1,2,3]
-reward_scales=[0.01,0.1,0.5,1.0]
+env_id = "Swimmer-v2"
+seeds = [1]
+reward_scales=[0.1,0.5,1.0]
 for seed in seeds:
     for reward_scale in reward_scales:
         fcn_rewards = np.loadtxt('./baselines/fcn/data/'+env_id+'_s'+str(seed)+'_r'+str(reward_scale)+'_rew.txt') * (1 / reward_scale)

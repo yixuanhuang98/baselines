@@ -58,6 +58,31 @@ def mlp(num_layers=2, num_hidden=64, activation=tf.tanh, layer_norm=False):
 
     return network_fn
 
+@register("linear")
+def linear(num_hidden=64):
+    """
+    Stack of fully-connected layers to be used in a policy / q-function approximator
+
+    Parameters:
+    ----------
+
+    num_layers: int                 number of fully-connected layers (default: 2)
+
+    num_hidden: int                 size of fully-connected layers (default: 64)
+
+    activation:                     activation function (default: tf.tanh)
+
+    Returns:
+    -------
+
+    function that builds fully connected network with a given input tensor / placeholder
+    """
+    def network_fn(X):
+        h = tf.layers.flatten(X)
+        h = fc(h,'linear_fc', nh=num_hidden, init_scale=np.sqrt(2))
+        return h
+    return network_fn
+
 
 @register("cnn")
 def cnn(**conv_kwargs):
