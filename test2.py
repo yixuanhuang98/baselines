@@ -1,5 +1,5 @@
 import os
-env_id = "HalfCheetah-v2"
+env_id = "Halfcheetah-v2"
 seed_list = [1,2,3]
 reward_scale_list=[1]
 for seed in seed_list:
