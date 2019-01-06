@@ -195,8 +195,8 @@ def learn(env, policy_fn, *,
 
         var_list = pi.get_trainable_variables()
 
-        print(var_list[10])
-        print(var_list[10].eval())
+        #print(var_list[10])
+        #print(var_list[10].eval())
 
         assign_old_eq_new() # set old parameter values to new parameter values
         logger.log("Optimizing...")
