@@ -136,6 +136,10 @@ def learn(env, policy_fn, *,
     loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
 
     var_list = pi.get_trainable_variables()
+
+    for tv in var_list:
+        print(tv)
+
     lossandgrad = U.function([ob, ac,ch, atarg, ret, lrmult], losses + [U.flatgrad(total_loss, var_list)])
     adam = MpiAdam(var_list, epsilon=adam_epsilon)
 
@@ -195,6 +199,9 @@ def learn(env, policy_fn, *,
         optim_batchsize = optim_batchsize or ob.shape[0]
 
         if hasattr(pi, "ob_rms"): pi.ob_rms.update(ob) # update running mean/std for policy
+
+        print(var_list[8])
+        print(var_list[8].eval())
 
         assign_old_eq_new() # set old parameter values to new parameter values
         logger.log("Optimizing...")

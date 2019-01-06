@@ -7,6 +7,7 @@ from baselines.common.distributions import make_pdtype, CategoricalPdType
 class FcnPolicy(object):
     recurrent = False
     def __init__(self, name, *args, **kwargs):
+        self.name = name
         with tf.variable_scope(name):
             self._init(*args, **kwargs)
             self.scope = tf.get_variable_scope().name
@@ -93,9 +94,10 @@ class FcnPolicy(object):
         if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
             mean = tf.gather_nd(self.actors, ch_nd)
 
-            with tf.variable_scope('pol'):
-                logstd = tf.get_variable(name="logstd", shape=[1, self.pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
-                pdparams = tf.concat([mean, mean * 0.0 + logstd], axis=1)
+            with tf.variable_scope(self.name, reuse=True):
+                with tf.variable_scope('pol', reuse=True):
+                    logstd = tf.get_variable(name="logstd", shape=[1, self.pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
+                    pdparams = tf.concat([mean, mean * 0.0 + logstd], axis=1)
         else:
             pdparams = tf.gather_nd(self.actors, ch_nd)
         return self.pdtype.pdfromflat(pdparams)
