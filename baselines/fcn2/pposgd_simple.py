@@ -111,7 +111,7 @@ def learn(env, policy_fn, *,
     ch = pi.cpdtype.sample_placeholder([None])
     ac = pi.pdtype.sample_placeholder([None])
 
-    old_pi_pd = oldpi.pd_given_ch(ch,ac_space)
+    old_pi_pd = oldpi.pd
 
     kloldnew = old_pi_pd.kl(pi.pd)
     ent = pi.pd.entropy()
