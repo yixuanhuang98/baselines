@@ -1,7 +1,7 @@
 import os
-env_id = "Walker2d-v2"
+env_id = "Humanoid-v2"
 seed_list = [1,2,3,4,5]
-reward_scale_list=[1]
+reward_scale_list=[0.1]
 for seed in seed_list:
     for reward_scale in reward_scale_list:
         if seed is 4 or seed is 5:
