@@ -15,6 +15,8 @@ class LinearPolicy(object):
         assert isinstance(ob_space, gym.spaces.Box)
 
         self.pdtype = pdtype = make_pdtype(ac_space)
+        self.cpdtype = cpdtype = CategoricalPdType(num_actors)
+
         sequence_length = None
 
         ob = U.get_placeholder(name="ob", dtype=tf.float32, shape=[sequence_length] + list(ob_space.shape))
