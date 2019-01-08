@@ -29,6 +29,19 @@ class LinearPolicy(object):
                 last_out = tf.nn.tanh(tf.layers.dense(last_out, hid_size, name="fc%i"%(i+1), kernel_initializer=U.normc_initializer(1.0)))
             self.vpred = tf.layers.dense(last_out, 1, name='final', kernel_initializer=U.normc_initializer(1.0))[:,0]
 
+        with tf.variable_scope('dec'):
+            last_out = obz
+            last_out = tf.layers.dense(last_out, hid_size, name='dec', kernel_initializer=U.normc_initializer(1.0))
+
+            # get the hidden_dicision
+            # TODO: compare: the output layer be cpdtype.param_shape()[0]//2 or hid_size?
+            hidden_decision = tf.layers.dense(last_out, num_actors, name="final", kernel_initializer=U.normc_initializer(0.01))
+
+        # get the choice probability distribution
+        self.cpd = cpdtype.pdfromflat(hidden_decision)
+        #TODO: not sure of sampling or mode
+        self.choice = ch =self.cpd.sample()
+
         with tf.variable_scope('pol'):
             last_out = obz
             last_out = tf.layers.dense(last_out, hid_size, name='fc', kernel_initializer=U.normc_initializer(1.0))
@@ -47,10 +60,10 @@ class LinearPolicy(object):
 
         stochastic = tf.placeholder(dtype=tf.bool, shape=())
         ac = U.switch(stochastic, self.pd.sample(), self.pd.mode())
-        self._act = U.function([stochastic, ob], [ac, self.vpred])
+        self._act = U.function([stochastic, ob], [ac, ch, self.vpred])
 
     def act(self, stochastic, ob):
-        ac1, vpred1 =  self._act(stochastic, ob[None])
+        ac1, ch1, vpred1 =  self._act(stochastic, ob[None])
         return ac1[0], vpred1[0]
     def get_variables(self):
         return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.scope)
