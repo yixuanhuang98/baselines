@@ -37,23 +37,23 @@ class LinearPolicy(object):
 
             # get the hidden_dicision
             # TODO: compare: the output layer be cpdtype.param_shape()[0]//2 or hid_size?
-            hidden_decision = tf.layers.dense(last_out, num_actors, name="final", kernel_initializer=U.normc_initializer(0.01))
+            hidden_decision = tf.layers.dense(last_out, num_actors, name="finald", kernel_initializer=U.normc_initializer(0.01))
 
-        # get the choice probability distribution
-        self.cpd = cpdtype.pdfromflat(hidden_decision)
-        #TODO: not sure of sampling or mode
-        self.choice = ch =self.cpd.sample()
+            # get the choice probability distribution
+            self.cpd = cpdtype.pdfromflat(hidden_decision)
+            #TODO: not sure of sampling or mode
+            self.choice = ch =self.cpd.sample()
 
         with tf.variable_scope('pol'):
             last_out = obz
             last_out = tf.layers.dense(last_out, hid_size, name='fc', kernel_initializer=U.normc_initializer(1.0))
             if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
-                mean = tf.layers.dense(last_out, pdtype.param_shape()[0]//2, name='final', kernel_initializer=U.normc_initializer(0.01))
+                mean = tf.layers.dense(last_out, pdtype.param_shape()[0]//2, name='finalz', kernel_initializer=U.normc_initializer(0.01))
 
                 logstd = tf.get_variable(name="logstd", shape=[1, pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
                 pdparam = tf.concat([mean, mean * 0.0 + logstd], axis=1)
             else:
-                pdparam = tf.layers.dense(last_out, pdtype.param_shape()[0], name='final', kernel_initializer=U.normc_initializer(0.01))
+                pdparam = tf.layers.dense(last_out, pdtype.param_shape()[0], name='finalz', kernel_initializer=U.normc_initializer(0.01))
 
         self.pd = pdtype.pdfromflat(pdparam)
 
