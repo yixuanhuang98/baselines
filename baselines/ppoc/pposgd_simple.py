@@ -118,7 +118,7 @@ def learn(env, policy_fn, *,
     loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
 
     var_list = pi.get_trainable_variables()
-    
+
     for tv in var_list:
         print(tv)
 
@@ -230,8 +230,8 @@ def learn(env, policy_fn, *,
     seed = 2
     scale = 0.1
     env_name = 'HalfCheetah-v2'
-    np.savetxt('./baselines/ppoc/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_rew.txt',np.asarray(reward_list))
-    np.savetxt('./baselines/ppoc/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_ts.txt',np.asarray(timestep_list))
+    np.savetxt('./baselines/ppoc/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_rew_t.txt',np.asarray(reward_list))
+    np.savetxt('./baselines/ppoc/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_ts_t.txt',np.asarray(timestep_list))
 
     return pi
 
