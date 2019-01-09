@@ -47,7 +47,7 @@ def main():
     logger.configure()
     parser = mujoco_arg_parser()
     parser.add_argument('--model-path', default=os.path.join(logger.get_dir(), 'humanoid_policy'))
-    parser.set_defaults(num_timesteps=int(2e4))
+    parser.set_defaults(num_timesteps=int(2e6))
 
     args = parser.parse_args()
     args.seed = 1
