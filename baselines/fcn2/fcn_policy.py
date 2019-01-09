@@ -30,7 +30,7 @@ class FcnPolicy(object):
             for i in range(num_hid_layers):
                 last_out = tf.nn.tanh(tf.layers.dense(last_out, hid_size, name="fc%i"%(i+1), kernel_initializer=U.normc_initializer(1.0)))
             self.vpred = tf.layers.dense(last_out, 1, name='final', kernel_initializer=U.normc_initializer(1.0))[:,0]
-        '''
+
         with tf.variable_scope('dec'):
             last_out = obz
             last_out = tf.layers.dense(last_out, hid_size, name='dec', kernel_initializer=U.normc_initializer(1.0))
@@ -43,12 +43,12 @@ class FcnPolicy(object):
         self.cpd = cpdtype.pdfromflat(hidden_decision)
         #TODO: not sure of sampling or mode
         self.choice = ch =self.cpd.sample()
-        '''
+
 
         with tf.variable_scope('pol'):
             last_outs = []
             actors = []
-            '''
+            
             for i in range(num_actors):
                 last_outs.append(tf.layers.dense(obz, hid_size, name='sub%i'%(i+1), kernel_initializer=U.normc_initializer(1.0)))
 
@@ -72,16 +72,6 @@ class FcnPolicy(object):
                     actors.append(tf.layers.dense(last_outs[i],pdtype.param_shape()[0],name="final%i"%(i+1),kernel_initializer=U.normc_initializer(0.01)))
                 self.actors = tf.stack(actors)
                 pdparam = tf.gather_nd(self.actors, ch_nd)
-            '''
-            last_out = obz
-            last_out = tf.layers.dense(last_out, hid_size, name='fc', kernel_initializer=U.normc_initializer(1.0))
-            if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
-                mean = tf.layers.dense(last_out, pdtype.param_shape()[0]//2, name='final', kernel_initializer=U.normc_initializer(0.01))
-
-                logstd = tf.get_variable(name="logstd", shape=[1, pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
-                pdparam = tf.concat([mean, mean * 0.0 + logstd], axis=1)
-            else:
-                pdparam = tf.layers.dense(last_out, pdtype.param_shape()[0], name='final', kernel_initializer=U.normc_initializer(0.01))
 
         self.pd = pdtype.pdfromflat(pdparam)
 
