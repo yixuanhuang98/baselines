@@ -217,7 +217,7 @@ def learn(env, policy_fn, *,
         if MPI.COMM_WORLD.Get_rank()==0:
             logger.dump_tabular()
 
-    seed = 2
+    seed = 1
     scale = 0.1
     env_name = 'HalfCheetah-v2'
     np.savetxt('./baselines/ppo1/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_rew_t.txt',np.asarray(reward_list))

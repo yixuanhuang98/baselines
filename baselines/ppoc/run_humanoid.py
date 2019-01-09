@@ -50,7 +50,7 @@ def main():
     parser.set_defaults(num_timesteps=int(2e4))
 
     args = parser.parse_args()
-    args.seed = 2
+    args.seed = 1
 
     if not args.play:
         # train the model
