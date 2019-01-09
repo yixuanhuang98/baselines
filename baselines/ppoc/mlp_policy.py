@@ -32,15 +32,15 @@ class MlpPolicy(object):
             for i in range(num_hid_layers):
                 last_out = tf.nn.tanh(tf.layers.dense(last_out, hid_size, name="fc%i"%(i+1), kernel_initializer=U.normc_initializer(1.0)))
             self.vpred = tf.layers.dense(last_out, 1, name='final', kernel_initializer=U.normc_initializer(1.0))[:,0]
-        '''
+
         with tf.variable_scope('dec'):
-            last_out = obz
-            last_out = tf.layers.dense(last_out, hid_size, name='dec', kernel_initializer=U.normc_initializer(1.0))
+            lo = obz
+            lo = tf.layers.dense(lo, hid_size, name='fc', kernel_initializer=U.normc_initializer(1.0))
 
             # get the hidden_dicision
             # TODO: compare: the output layer be cpdtype.param_shape()[0]//2 or hid_size?
-            hidden_decision = tf.layers.dense(last_out, num_actors, name="final", kernel_initializer=U.normc_initializer(0.01))
-        '''
+            hidden_decision = tf.layers.dense(lo, num_actors, name="finald", kernel_initializer=U.normc_initializer(0.01))
+
         # get the choice probability distribution
         #self.cpd = cpdtype.pdfromflat(hidden_decision)
         #TODO: not sure of sampling or mode
