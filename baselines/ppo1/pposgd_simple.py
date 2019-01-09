@@ -141,6 +141,9 @@ def learn(env, policy_fn, *,
 
     assert sum([max_iters>0, max_timesteps>0, max_episodes>0, max_seconds>0])==1, "Only one time constraint permitted"
 
+    reward_list = []
+    timestep_list = []       
+
     while True:
         if callback: callback(locals(), globals())
         if max_timesteps and timesteps_so_far >= max_timesteps:
@@ -203,14 +206,22 @@ def learn(env, policy_fn, *,
         logger.record_tabular("EpLenMean", np.mean(lenbuffer))
         logger.record_tabular("EpRewMean", np.mean(rewbuffer))
         logger.record_tabular("EpThisIter", len(lens))
+        reward_list.append(np.mean(rewbuffer))
         episodes_so_far += len(lens)
         timesteps_so_far += sum(lens)
         iters_so_far += 1
         logger.record_tabular("EpisodesSoFar", episodes_so_far)
         logger.record_tabular("TimestepsSoFar", timesteps_so_far)
+        timestep_list.append(timesteps_so_far)
         logger.record_tabular("TimeElapsed", time.time() - tstart)
         if MPI.COMM_WORLD.Get_rank()==0:
             logger.dump_tabular()
+
+    seed = 1
+    scale = 0.1
+    env_name = 'HalfCheetah-v2'
+    np.savetxt('./baselines/ppo1/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_rew.txt',np.asarray(reward_list))
+    np.savetxt('./baselines/ppo1/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_ts.txt',np.asarray(timestep_list))    
 
     return pi
 

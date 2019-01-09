@@ -7,7 +7,7 @@ from baselines import logger
 import gym
 
 def train(num_timesteps, seed, model_path=None):
-    env_id = 'Humanoid-v2'
+    env_id = 'HalfCheetah-v2'
     from baselines.ppo1 import mlp_policy, pposgd_simple
     U.make_session(num_cpu=1).__enter__()
     def policy_fn(name, ob_space, ac_space):
@@ -47,9 +47,10 @@ def main():
     logger.configure()
     parser = mujoco_arg_parser()
     parser.add_argument('--model-path', default=os.path.join(logger.get_dir(), 'humanoid_policy'))
-    parser.set_defaults(num_timesteps=int(2e7))
+    parser.set_defaults(num_timesteps=int(2e4))
 
     args = parser.parse_args()
+    args.seed = 1
 
     if not args.play:
         # train the model
