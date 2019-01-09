@@ -33,7 +33,7 @@ def plot(seeds, reward_scale, alg, env_id):
 
 
 
-env_id = "Walker2d-v2"
+env_id = "HalfCheetah-v2"
 seeds = [1,2,3,4,5]
 reward_scale=0.1
 algs = ['scn','ppo1']
@@ -42,9 +42,10 @@ for alg in algs:
     plt.fill_between(ts, ma,mi, alpha=0.5)
     plt.plot(ts, avg, label="{}".format(alg))
 
+plt.title(env_id)
 plt.legend(loc=4)
 plt.xlabel('Number of Timesteps')
 plt.ylabel('Rewards')
 
 
-plt.savefig("./check/"+env_id+'_r'+str(reward_scales[0])+'.png')
+plt.savefig("./check/"+env_id+'.png')

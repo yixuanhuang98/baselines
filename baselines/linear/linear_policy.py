@@ -30,7 +30,7 @@ class LinearPolicy(object):
             for i in range(num_hid_layers):
                 last_out = tf.nn.tanh(tf.layers.dense(last_out, hid_size, name="fc%i"%(i+1), kernel_initializer=U.normc_initializer(1.0)))
             self.vpred = tf.layers.dense(last_out, 1, name='final', kernel_initializer=U.normc_initializer(1.0))[:,0]
-
+        '''
         with tf.variable_scope('dec'):
             last_out = obz
             last_out = tf.layers.dense(last_out, hid_size, name='dec', kernel_initializer=U.normc_initializer(1.0))
@@ -43,6 +43,7 @@ class LinearPolicy(object):
             self.cpd = cpdtype.pdfromflat(hidden_decision)
             #TODO: not sure of sampling or mode
             self.choice = ch =self.cpd.sample()
+        '''
 
         with tf.variable_scope('pol'):
             last_out = obz
