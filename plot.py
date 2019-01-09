@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 env_id = "HalfCheetah-v2"
-seeds = [2]
+seeds = [1]
 reward_scales=[0.1]
 for seed in seeds:
     for reward_scale in reward_scales:
