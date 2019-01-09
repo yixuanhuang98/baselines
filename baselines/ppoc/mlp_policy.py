@@ -17,7 +17,7 @@ class MlpPolicy(object):
 
         num_actors = 1
 
-        self.cpdtype = cpdtype = CategoricalPdType(num_actors)
+        #self.cpdtype = cpdtype = CategoricalPdType(num_actors)
         self.pdtype = pdtype = make_pdtype(ac_space)
         sequence_length = None
 
@@ -42,10 +42,10 @@ class MlpPolicy(object):
             hidden_decision = tf.layers.dense(last_out, num_actors, name="final", kernel_initializer=U.normc_initializer(0.01))
 
         # get the choice probability distribution
-        self.cpd = cpdtype.pdfromflat(hidden_decision)
+        #self.cpd = cpdtype.pdfromflat(hidden_decision)
         #TODO: not sure of sampling or mode
-        self.choice = ch =self.cpd.sample()
-        
+        #self.choice = ch =self.cpd.sample()
+
         with tf.variable_scope('pol'):
             last_out = obz
             for i in range(num_hid_layers):
