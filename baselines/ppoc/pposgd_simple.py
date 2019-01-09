@@ -118,7 +118,7 @@ def learn(env, policy_fn, *,
     loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
 
     var_list = pi.get_trainable_variables()
-
+    '''
     for tv in var_list:
         print(tv)
 
@@ -126,6 +126,7 @@ def learn(env, policy_fn, *,
 
     for tv in var_list:
         print(tv)
+    '''
 
     lossandgrad = U.function([ob, ac, atarg, ret, lrmult], losses + [U.flatgrad(total_loss, var_list)])
     adam = MpiAdam(var_list, epsilon=adam_epsilon)
