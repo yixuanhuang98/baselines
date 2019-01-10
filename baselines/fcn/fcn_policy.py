@@ -54,8 +54,7 @@ class FcnPolicy(object):
 
             ch = tf.reshape(ch,[-1])
             r = tf.range(tf.shape(ch)[0])
-            ch = tf.cast(ch,tf.int32)
-
+            ch = tf.zeros(shape=tf.shape(ch))
             ch_nd = tf.stack([ch,r],axis=1)
 
             if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
