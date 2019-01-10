@@ -33,10 +33,10 @@ def plot(seeds, reward_scale, alg, env_id):
 
 
 
-env_id = "HalfCheetah-v2"
+env_id = "Humanoid-v2"
 seeds = [1,2,3,4,5]
 reward_scale=0.1
-algs = ['scn','ppo1']
+algs = ['scn','ppo1','fcn','nlfcn','linear']
 for alg in algs:
     ts, ma, mi, avg = plot(seeds, reward_scale, alg, env_id)
     plt.fill_between(ts, ma,mi, alpha=0.5)
