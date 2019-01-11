@@ -200,8 +200,8 @@ def learn(env, policy_fn, *,
 
         if hasattr(pi, "ob_rms"): pi.ob_rms.update(ob) # update running mean/std for policy
 
-        #print(var_list[8])
-        #print(var_list[8].eval())
+        print(var_list[10])
+        print(var_list[10].eval())
 
         assign_old_eq_new() # set old parameter values to new parameter values
         logger.log("Optimizing...")

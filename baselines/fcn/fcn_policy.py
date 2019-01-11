@@ -39,10 +39,11 @@ class FcnPolicy(object):
             # TODO: compare: the output layer be cpdtype.param_shape()[0]//2 or hid_size?
             hidden_decision = tf.layers.dense(last_out, num_actors, name="final", kernel_initializer=U.normc_initializer(0.01))
 
+        dec_stochastic = tf.placeholder(dtype=tf.bool, shape=())
         # get the choice probability distribution
         self.cpd = cpdtype.pdfromflat(hidden_decision)
         #TODO: not sure of sampling or mode
-        self.choice = ch =self.cpd.sample()
+        self.choice = ch = U.switch(dec_stochastic, self.cpd.sample(), self.cpd.mode())
 
         with tf.variable_scope('pol'):
             last_outs = []
@@ -54,7 +55,7 @@ class FcnPolicy(object):
 
             ch = tf.reshape(ch,[-1])
             r = tf.range(tf.shape(ch)[0])
-            ch = tf.zeros(shape=tf.shape(ch))
+            ch = tf.ones(shape=tf.shape(ch), dtype=tf.int32)
             ch_nd = tf.stack([ch,r],axis=1)
 
             if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
@@ -80,10 +81,10 @@ class FcnPolicy(object):
         stochastic = tf.placeholder(dtype=tf.bool, shape=())
         ac = U.switch(stochastic, self.pd.sample(), self.pd.mode())
 
-        self._act = U.function([stochastic, ob], [ac,ch,self.vpred])
+        self._act = U.function([stochastic, dec_stochastic, ob], [ac,ch,self.vpred])
 
-    def act(self, stochastic, ob):
-        ac1,ch1, vpred1 =  self._act(stochastic, ob[None])
+    def act(self, stochastic,dec_stochastic, ob):
+        ac1,ch1, vpred1 =  self._act(stochastic,dec_stochastic, ob[None])
         return ac1[0],ch1, vpred1[0]
 
     def pd_given_ch(self, choice,ac_space, gaussian_fixed_var=True):
