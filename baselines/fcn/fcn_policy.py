@@ -76,7 +76,6 @@ class FcnPolicy(object):
 
         self.state_in = []
         self.state_out = []
-
         stochastic = tf.placeholder(dtype=tf.bool, shape=())
         ac = U.switch(stochastic, self.pd.sample(), self.pd.mode())
 

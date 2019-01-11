@@ -107,7 +107,6 @@ def learn(env, policy_fn, *,
     clip_param = clip_param * lrmult # Annealed clipping parameter epsilon
 
     ob = U.get_placeholder_cached(name="ob")
-
     ch = pi.cpdtype.sample_placeholder([None])
     ac = pi.pdtype.sample_placeholder([None])
 
@@ -129,18 +128,22 @@ def learn(env, policy_fn, *,
     surr3 = tf.clip_by_value(ch_ratio, 1.0 - clip_param, 1.0 + clip_param) * ac_ratio * atarg
     surr4 = tf.clip_by_value(ch_ratio, 1.0 - clip_param, 1.0 + clip_param) * tf.clip_by_value(ac_ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg
 
+
+    surr21 = ac_ratio * atarg # surrogate from conservative policy iteration
+    surr22 = tf.clip_by_value(ac_ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg #
     pol_surr = - tf.reduce_mean(tf.minimum(tf.minimum(tf.minimum(surr1, surr2),surr3),surr4)) # PPO's pessimistic surrogate (L^CLIP)
+    pol_surr2 = - tf.reduce_mean(tf.minimum(surr21, surr22)) # PPO's pessimistic surrogate (L^CLIP)
     vf_loss = tf.reduce_mean(tf.square(pi.vpred - ret))
     total_loss = pol_surr + pol_entpen + vf_loss
+    total_loss2 = pol_surr2 + pol_entpen + vf_loss
     losses = [pol_surr, pol_entpen, vf_loss, meankl, meanent]
     loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
 
     var_list = pi.get_trainable_variables()
-
-    for tv in var_list:
-        print(tv)
+    #var_list2 = [var for var in var_list if not('dec' in var.name)]
 
     lossandgrad = U.function([ob, ac,ch, atarg, ret, lrmult], losses + [U.flatgrad(total_loss, var_list)])
+    lossandgrad2 = U.function([ob, ac,ch, atarg, ret, lrmult], losses + [U.flatgrad(total_loss2, var_list)])
     adam = MpiAdam(var_list, epsilon=adam_epsilon)
 
     assign_old_eq_new = U.function([],[], updates=[tf.assign(oldv, newv)
@@ -186,9 +189,13 @@ def learn(env, policy_fn, *,
         else:
             raise NotImplementedError
 
+
+        is_learn_choice = ((iters_so_far % 10) == 0) and (iters_so_far < 800)
+        print(is_learn_choice)
         logger.log("********** Iteration %i ************"%iters_so_far)
 
         seg = seg_gen.__next__()
+        seg = seg_gen.send(is_learn_choice)
         add_vtarg_and_adv(seg, gamma, lam)
 
         # ob, ac, atarg, ret, td1ret = map(np.concatenate, (obs, acs, atargs, rets, td1rets))
@@ -210,7 +217,10 @@ def learn(env, policy_fn, *,
         for _ in range(optim_epochs):
             losses = [] # list of tuples, each of which gives the loss for a minibatch
             for batch in d.iterate_once(optim_batchsize):
-                *newlosses, g = lossandgrad(batch["ob"], batch["ac"],batch["ch"], batch["atarg"], batch["vtarg"], cur_lrmult)
+                if is_learn_choice:
+                    *newlosses, g = lossandgrad(batch["ob"], batch["ac"],batch["ch"], batch["atarg"], batch["vtarg"], cur_lrmult)
+                else:
+                    *newlosses, g = lossandgrad2(batch["ob"], batch["ac"],batch["ch"], batch["atarg"], batch["vtarg"], cur_lrmult)
                 adam.update(g, optim_stepsize * cur_lrmult)
                 losses.append(newlosses)
             logger.log(fmt_row(13, np.mean(losses, axis=0)))
@@ -244,8 +254,8 @@ def learn(env, policy_fn, *,
         if MPI.COMM_WORLD.Get_rank()==0:
             logger.dump_tabular()
 
-    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_rew.txt',np.asarray(reward_list))
-    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_ts.txt',np.asarray(timestep_list))
+    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_rew_sbasic.txt',np.asarray(reward_list))
+    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_ts_sbasic.txt',np.asarray(timestep_list))
 
     return pi
 
