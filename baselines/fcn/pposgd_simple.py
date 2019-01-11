@@ -133,6 +133,7 @@ def learn(env, policy_fn, *,
     surr3 = tf.clip_by_value(ch_ratio, 1.0 - clip_param, 1.0 + clip_param) * ac_ratio * atarg
     surr4 = tf.clip_by_value(ch_ratio, 1.0 - clip_param, 1.0 + clip_param) * tf.clip_by_value(ac_ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg
 
+
     pol_surr = - tf.reduce_mean(tf.minimum(tf.minimum(tf.minimum(surr1, surr2),surr3),surr4)) # PPO's pessimistic surrogate (L^CLIP)
     vf_loss = tf.reduce_mean(tf.square(pi.vpred - ret))
     total_loss = pol_surr + pol_entpen + vf_loss
@@ -140,9 +141,7 @@ def learn(env, policy_fn, *,
     loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
 
     var_list = pi.get_trainable_variables()
-
-    for tv in var_list:
-        print(tv)
+    #var_list2 = [var for var in var_list if not('dec' in var.name)]
 
     lossandgrad = U.function([ob, ac,ch, atarg, ret, lrmult, st], losses + [U.flatgrad(total_loss, var_list)])
     adam = MpiAdam(var_list, epsilon=adam_epsilon)
@@ -191,7 +190,7 @@ def learn(env, policy_fn, *,
             raise NotImplementedError
 
 
-        is_learn_choice = ((iters_so_far % 10) == 0)
+        is_learn_choice = ((iters_so_far % 10) == 0) and (iters_so_far < 800)
 
         logger.log("********** Iteration %i ************"%iters_so_far)
 
@@ -253,8 +252,8 @@ def learn(env, policy_fn, *,
         if MPI.COMM_WORLD.Get_rank()==0:
             logger.dump_tabular()
 
-    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_rew.txt',np.asarray(reward_list))
-    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_ts.txt',np.asarray(timestep_list))
+    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_rew_snew.txt',np.asarray(reward_list))
+    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_ts_snew.txt',np.asarray(timestep_list))
 
     return pi
 
