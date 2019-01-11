@@ -43,7 +43,12 @@ class FcnPolicy(object):
         # get the choice probability distribution
         self.cpd = cpdtype.pdfromflat(hidden_decision)
         #TODO: not sure of sampling or mode
+<<<<<<< HEAD
         self.choice = ch = U.switch(dec_stochastic, self.cpd.sample(), self.cpd.mode())
+=======
+        stochastic = tf.placeholder(dtype=tf.bool, shape=())
+        ch = U.switch(stochastic, self.cpd.sample(), self.cpd.mode())
+>>>>>>> 61e0cb6c14cd2843554850af8c372919c372ca12
 
         with tf.variable_scope('pol'):
             last_outs = []
@@ -55,7 +60,11 @@ class FcnPolicy(object):
 
             ch = tf.reshape(ch,[-1])
             r = tf.range(tf.shape(ch)[0])
+<<<<<<< HEAD
             ch = tf.ones(shape=tf.shape(ch), dtype=tf.int32)
+=======
+            ch = tf.cast(ch,tf.int32)
+>>>>>>> 61e0cb6c14cd2843554850af8c372919c372ca12
             ch_nd = tf.stack([ch,r],axis=1)
 
             if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
@@ -77,8 +86,6 @@ class FcnPolicy(object):
 
         self.state_in = []
         self.state_out = []
-
-        stochastic = tf.placeholder(dtype=tf.bool, shape=())
         ac = U.switch(stochastic, self.pd.sample(), self.pd.mode())
 
         self._act = U.function([stochastic, dec_stochastic, ob], [ac,ch,self.vpred])
