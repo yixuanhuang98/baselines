@@ -31,14 +31,43 @@ def plot(seeds, reward_scale, alg, env_id):
     return tss, max, min, mean
 
 
+def plot2(seeds, reward_scale, alg, env_id, e):
+    rws = []
+    tss = -1
+    max_len = -1
+    for seed in seeds:
+
+        rw = np.loadtxt('./baselines/'+alg+'/data/'+env_id+'_s'+str(seed)+'_r'+str(reward_scale)+'_rew'+e+'.txt') * (1 / reward_scale)
+        if rw.size > max_len:
+            max_len = rw.size
+            tss = np.loadtxt('./baselines/'+alg+'/data/'+env_id+'_s'+str(seed)+'_r'+str(reward_scale)+'_ts'+e+'.txt')
+        rws.append(rw)
+
+    for i in range(len(rws)):
+        if rws[i].size < max_len:
+            rws[i] = np.pad(rws[i],(0,max_len-rws[i].size),'edge')
+    rws = np.stack(rws)
+    max = np.amax(rws, axis=0)
+    min = np.amin(rws, axis=0)
+    mean = np.mean(rws, axis=0)
+    return tss, max, min, mean
 
 
-env_id = "Humanoid-v2"
+env_id = "Walker2d-v2"
 seeds = [1,2,3,4,5]
 reward_scale=0.1
-algs = ['scn','ppo1','fcn','nlfcn','linear']
+algs = ['scn']
 for alg in algs:
     ts, ma, mi, avg = plot(seeds, reward_scale, alg, env_id)
+    plt.fill_between(ts, ma,mi, alpha=0.5)
+    plt.plot(ts, avg, label="{}".format(alg))
+
+
+seeds = [1,2,3,4,5]
+reward_scale=0.1
+algs = ['fcn']
+for alg in algs:
+    ts, ma, mi, avg = plot2(seeds, reward_scale, alg, env_id, "_snew")
     plt.fill_between(ts, ma,mi, alpha=0.5)
     plt.plot(ts, avg, label="{}".format(alg))
 

@@ -29,7 +29,6 @@ def traj_segment_generator(pi, env, horizon):
     prevacs = acs.copy()
     prevchs = chs.copy()
     stochastic = yield
-    print("stochastic start", stochastic)
 
     while True:
         prevac = ac
@@ -41,7 +40,6 @@ def traj_segment_generator(pi, env, horizon):
             stochastic = yield {"ob" : obs, "rew" : rews, "vpred" : vpreds, "new" : news,
                     "ac" : acs, "ch":chs, "prevac" : prevacs, "nextvpred": vpred * (1 - new),
                     "ep_rets" : ep_rets, "ep_lens" : ep_lens}
-            print("stochastic next1", stochastic)
             # Be careful!!! if you change the downstream algorithm to aggregate
             # several of these batches, then be sure to do a deepcopy
             ep_rets = []
@@ -130,8 +128,8 @@ def learn(env, policy_fn, *,
 
     surr1 = ac_ratio * ch_ratio * atarg # surrogate from conservative policy iteration
     surr2 = tf.clip_by_value(ac_ratio, 1.0 - clip_param, 1.0 + clip_param) * ch_ratio * atarg #
-    surr3 = tf.clip_by_value(ch_ratio, 1.0 - clip_param, 1.0 + clip_param) * ac_ratio * atarg
-    surr4 = tf.clip_by_value(ch_ratio, 1.0 - clip_param, 1.0 + clip_param) * tf.clip_by_value(ac_ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg
+    surr3 = tf.clip_by_value(ch_ratio, 1.0 - (clip_param* 0.5), 1.0 + clip_param) * ac_ratio * atarg
+    surr4 = tf.clip_by_value(ch_ratio, 1.0 - (clip_param* 0.5), 1.0 + clip_param) * tf.clip_by_value(ac_ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg
 
 
     pol_surr = - tf.reduce_mean(tf.minimum(tf.minimum(tf.minimum(surr1, surr2),surr3),surr4)) # PPO's pessimistic surrogate (L^CLIP)
@@ -170,7 +168,6 @@ def learn(env, policy_fn, *,
     timestep_list = []
 
     while True:
-        print(env_name)
 
         if callback: callback(locals(), globals())
         if max_timesteps and timesteps_so_far >= max_timesteps:
@@ -206,9 +203,6 @@ def learn(env, policy_fn, *,
         optim_batchsize = optim_batchsize or ob.shape[0]
 
         if hasattr(pi, "ob_rms"): pi.ob_rms.update(ob) # update running mean/std for policy
-
-        #print(var_list[8])
-        #print(var_list[8].eval())
 
         assign_old_eq_new() # set old parameter values to new parameter values
         logger.log("Optimizing...")
@@ -252,8 +246,8 @@ def learn(env, policy_fn, *,
         if MPI.COMM_WORLD.Get_rank()==0:
             logger.dump_tabular()
 
-    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_rew_snew.txt',np.asarray(reward_list))
-    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_ts_snew.txt',np.asarray(timestep_list))
+    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_rew_shcp.txt',np.asarray(reward_list))
+    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_ts_shcp.txt',np.asarray(timestep_list))
 
     return pi
 
