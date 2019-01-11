@@ -11,6 +11,7 @@ class FcnPolicy(object):
         with tf.variable_scope(name):
             self._init(*args, **kwargs)
             self.scope = tf.get_variable_scope().name
+            print(self.scope)
 
     def _init(self, ob_space, ac_space, num_actors, hid_size, num_hid_layers, gaussian_fixed_var=True):
         assert isinstance(ob_space, gym.spaces.Box)
@@ -42,7 +43,7 @@ class FcnPolicy(object):
         # get the choice probability distribution
         self.cpd = cpdtype.pdfromflat(hidden_decision)
         #TODO: not sure of sampling or mode
-        stochastic = tf.placeholder(dtype=tf.bool, shape=())
+        stochastic = tf.placeholder(name="stu", dtype=tf.bool, shape=())
         ch = U.switch(stochastic, self.cpd.sample(), self.cpd.mode())
 
         with tf.variable_scope('pol'):
@@ -77,7 +78,7 @@ class FcnPolicy(object):
 
         self.state_in = []
         self.state_out = []
-        ac = U.switch(stochastic, self.pd.sample(), self.pd.mode())
+        ac = self.pd.sample()
 
         self._act = U.function([stochastic, ob], [ac,ch,self.vpred])
 

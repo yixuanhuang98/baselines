@@ -107,6 +107,7 @@ def learn(env, policy_fn, *,
     clip_param = clip_param * lrmult # Annealed clipping parameter epsilon
 
     ob = U.get_placeholder_cached(name="ob")
+    st = tf.get_default_graph().get_tensor_by_name('pi/stu:0')
 
     ch = pi.cpdtype.sample_placeholder([None])
     ac = pi.pdtype.sample_placeholder([None])
@@ -140,12 +141,12 @@ def learn(env, policy_fn, *,
     for tv in var_list:
         print(tv)
 
-    lossandgrad = U.function([ob, ac,ch, atarg, ret, lrmult], losses + [U.flatgrad(total_loss, var_list)])
+    lossandgrad = U.function([ob, ac,ch, atarg, ret, lrmult, st], losses + [U.flatgrad(total_loss, var_list)])
     adam = MpiAdam(var_list, epsilon=adam_epsilon)
 
     assign_old_eq_new = U.function([],[], updates=[tf.assign(oldv, newv)
         for (oldv, newv) in zipsame(oldpi.get_variables(), pi.get_variables())])
-    compute_losses = U.function([ob, ac,ch, atarg, ret, lrmult], losses)
+    compute_losses = U.function([ob, ac,ch, atarg, ret, lrmult, st], losses)
 
     U.initialize()
     adam.sync()
@@ -186,6 +187,9 @@ def learn(env, policy_fn, *,
         else:
             raise NotImplementedError
 
+
+        is_learn_choice = ((iters_so_far % 10) == 0)
+
         logger.log("********** Iteration %i ************"%iters_so_far)
 
         seg = seg_gen.__next__()
@@ -210,7 +214,8 @@ def learn(env, policy_fn, *,
         for _ in range(optim_epochs):
             losses = [] # list of tuples, each of which gives the loss for a minibatch
             for batch in d.iterate_once(optim_batchsize):
-                *newlosses, g = lossandgrad(batch["ob"], batch["ac"],batch["ch"], batch["atarg"], batch["vtarg"], cur_lrmult)
+                stochastic = is_learn_choice
+                *newlosses, g = lossandgrad(batch["ob"], batch["ac"],batch["ch"], batch["atarg"], batch["vtarg"], cur_lrmult, stochastic)
                 adam.update(g, optim_stepsize * cur_lrmult)
                 losses.append(newlosses)
             logger.log(fmt_row(13, np.mean(losses, axis=0)))
@@ -218,7 +223,7 @@ def learn(env, policy_fn, *,
         logger.log("Evaluating losses...")
         losses = []
         for batch in d.iterate_once(optim_batchsize):
-            newlosses = compute_losses(batch["ob"], batch["ac"],batch["ch"], batch["atarg"], batch["vtarg"], cur_lrmult)
+            newlosses = compute_losses(batch["ob"], batch["ac"],batch["ch"], batch["atarg"], batch["vtarg"], cur_lrmult, stochastic)
             losses.append(newlosses)
         meanlosses,_,_ = mpi_moments(losses, axis=0)
         logger.log(fmt_row(13, meanlosses))
