@@ -134,7 +134,7 @@ def learn(env, policy_fn, *,
     vf_loss = tf.reduce_mean(tf.square(pi.vpred - ret))
     total_loss_ch = pol_surr_ch + pol_entpen + vf_loss
     total_loss_ac = pol_surr_ac + pol_entpen + vf_loss
-    losses = [pol_surr, pol_entpen, vf_loss, meankl, meanent]
+    losses = [pol_surr_ac, pol_entpen, vf_loss, meankl, meanent]
     loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
 
     var_list = pi.get_trainable_variables()
