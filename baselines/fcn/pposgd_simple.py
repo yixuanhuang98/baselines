@@ -126,22 +126,25 @@ def learn(env, policy_fn, *,
     ac_ratio = tf.exp(pi.pd.logp(ac) - old_pi_pd.logp(ac)) # pnew / pold
     ch_ratio = tf.exp(pi.cpd.logp(ch) - oldpi.cpd.logp(ch))
 
-    surr1 = ac_ratio * ch_ratio * atarg # surrogate from conservative policy iteration
-    surr2 = tf.clip_by_value(ac_ratio, 1.0 - clip_param, 1.0 + clip_param) * ch_ratio * atarg #
-    surr3 = tf.clip_by_value(ch_ratio, 1.0 - clip_param, 1.0 + clip_param) * ac_ratio * atarg
-    surr4 = tf.clip_by_value(ch_ratio, 1.0 - clip_param, 1.0 + clip_param) * tf.clip_by_value(ac_ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg
+    surr11 = ac_ratio * atarg # surrogate from conservative policy iteration
+    surr12 = tf.clip_by_value(ac_ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg #
+    surr21 = ch_ratio * atarg # surrogate from conservative policy iteration
+    surr22 = tf.clip_by_value(ch_ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg #
+    
 
-
-    pol_surr = - tf.reduce_mean(tf.minimum(tf.minimum(tf.minimum(surr1, surr2),surr3),surr4)) # PPO's pessimistic surrogate (L^CLIP)
+    pol_surr1 = - tf.reduce_mean(tf.minimum(surr11, surr12)) # PPO's pessimistic surrogate (L^CLIP)
+    pol_surr2 = - tf.reduce_mean(tf.minimum(surr21, surr22))
     vf_loss = tf.reduce_mean(tf.square(pi.vpred - ret))
-    total_loss = pol_surr + pol_entpen + vf_loss
-    losses = [pol_surr, pol_entpen, vf_loss, meankl, meanent]
+    total_loss_ac = pol_surr1 + pol_entpen + vf_loss
+    total_loss_ch = pol_surr2 + pol_entpen + vf_loss
+    losses = [pol_surr1, pol_entpen, vf_loss, meankl, meanent]
     loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
 
     var_list = pi.get_trainable_variables()
     #var_list2 = [var for var in var_list if not('dec' in var.name)]
 
-    lossandgrad = U.function([ob, ac,ch, atarg, ret, lrmult, st], losses + [U.flatgrad(total_loss, var_list)])
+    lossandgrad_ch = U.function([ob, ac,ch, atarg, ret, lrmult, st], losses + [U.flatgrad(total_loss_ch, var_list)])
+    lossandgrad_ac = U.function([ob, ac,ch, atarg, ret, lrmult, st], losses + [U.flatgrad(total_loss_ac, var_list)])
     adam = MpiAdam(var_list, epsilon=adam_epsilon)
 
     assign_old_eq_new = U.function([],[], updates=[tf.assign(oldv, newv)
@@ -212,7 +215,10 @@ def learn(env, policy_fn, *,
             losses = [] # list of tuples, each of which gives the loss for a minibatch
             for batch in d.iterate_once(optim_batchsize):
                 stochastic = is_learn_choice
-                *newlosses, g = lossandgrad(batch["ob"], batch["ac"],batch["ch"], batch["atarg"], batch["vtarg"], cur_lrmult, stochastic)
+                if is_learn_choice:
+                    *newlosses, g = lossandgrad_ch(batch["ob"], batch["ac"],batch["ch"], batch["atarg"], batch["vtarg"], cur_lrmult, stochastic)
+                else:
+                    *newlosses, g = lossandgrad_ac(batch["ob"], batch["ac"],batch["ch"], batch["atarg"], batch["vtarg"], cur_lrmult, stochastic)
                 adam.update(g, optim_stepsize * cur_lrmult)
                 losses.append(newlosses)
             logger.log(fmt_row(13, np.mean(losses, axis=0)))
