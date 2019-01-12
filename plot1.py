@@ -53,7 +53,7 @@ def plot2(seeds, reward_scale, alg, env_id, e):
     return tss, max, min, mean
 
 
-env_id = "Walker2d-v2"
+env_id = "HalfCheetah-v2"
 seeds = [1,2,3,4,5]
 reward_scale=0.1
 algs = ['scn']
@@ -67,7 +67,7 @@ seeds = [1,2,3,4,5]
 reward_scale=0.1
 algs = ['fcn']
 for alg in algs:
-    ts, ma, mi, avg = plot2(seeds, reward_scale, alg, env_id, "_snew")
+    ts, ma, mi, avg = plot2(seeds, reward_scale, alg, env_id, "_sserg")
     plt.fill_between(ts, ma,mi, alpha=0.5)
     plt.plot(ts, avg, label="{}".format(alg))
 
