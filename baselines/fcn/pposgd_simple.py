@@ -128,8 +128,8 @@ def learn(env, policy_fn, *,
 
     surr1 = ac_ratio * ch_ratio * atarg # surrogate from conservative policy iteration
     surr2 = tf.clip_by_value(ac_ratio, 1.0 - clip_param, 1.0 + clip_param) * ch_ratio * atarg #
-    surr3 = tf.clip_by_value(ch_ratio, 1.0 - (clip_param* 0.5), 1.0 + (clip_param* 0.5)) * ac_ratio * atarg
-    surr4 = tf.clip_by_value(ch_ratio, 1.0 - (clip_param* 0.5), 1.0 + (clip_param* 0.5)) * tf.clip_by_value(ac_ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg
+    surr3 = tf.clip_by_value(ch_ratio, 1.0 - clip_param, 1.0 + clip_param) * ac_ratio * atarg
+    surr4 = tf.clip_by_value(ch_ratio, 1.0 - clip_param, 1.0 + clip_param) * tf.clip_by_value(ac_ratio, 1.0 - clip_param, 1.0 + clip_param) * atarg
 
 
     pol_surr = - tf.reduce_mean(tf.minimum(tf.minimum(tf.minimum(surr1, surr2),surr3),surr4)) # PPO's pessimistic surrogate (L^CLIP)
@@ -187,7 +187,7 @@ def learn(env, policy_fn, *,
             raise NotImplementedError
 
 
-        is_learn_choice = ((iters_so_far % 10) == 0) and (iters_so_far < 800)
+        is_learn_choice = ((iters_so_far % 2) == 0)
 
         logger.log("********** Iteration %i ************"%iters_so_far)
 
@@ -246,8 +246,8 @@ def learn(env, policy_fn, *,
         if MPI.COMM_WORLD.Get_rank()==0:
             logger.dump_tabular()
 
-    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_rew_shcp.txt',np.asarray(reward_list))
-    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_ts_shcp.txt',np.asarray(timestep_list))
+    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_rew_sserg.txt',np.asarray(reward_list))
+    np.savetxt('./baselines/fcn/data/'+env_name+'_s'+str(seed)+'_r'+str(scale)+'_ts_sserg.txt',np.asarray(timestep_list))
 
     return pi
 
