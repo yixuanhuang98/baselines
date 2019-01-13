@@ -142,12 +142,14 @@ def learn(env, policy_fn, *,
     losses = [pol_surr1, pol_entpen, vf_loss, meankl, meanent]
     loss_names = ["pol_surr", "pol_entpen", "vf_loss", "kl", "ent"]
 
-    var_list = pi.get_trainable_variables()
-    # var_list2 = [var for var in var_list if not('dec' in var.name)]
+    var_list_temp = pi.get_trainable_variables()
+    var_list_ac = [var for var in var_list_temp if not('dec' in var.name)]
+    var_list_dec = [var for var in var_list_temp if ('dec' in var.name)]
 
-    lossandgrad_ch = U.function([ob, ac, ch, atarg, ret, lrmult, st], losses + [U.flatgrad(total_loss_ch, var_list)])
-    lossandgrad_ac = U.function([ob, ac, ch, atarg, ret, lrmult, st], losses + [U.flatgrad(total_loss_ac, var_list)])
-    adam = MpiAdam(var_list, epsilon=adam_epsilon)
+    lossandgrad_ch = U.function([ob, ac, ch, atarg, ret, lrmult, st], losses + [U.flatgrad(total_loss_ch, var_list_dec)])
+    lossandgrad_ac = U.function([ob, ac, ch, atarg, ret, lrmult, st], losses + [U.flatgrad(total_loss_ac, var_list_ac)])
+    adam_ac = MpiAdam(var_list_ac, epsilon=adam_epsilon)
+    adam_dec = MpiAdam(var_list_dec, epsilon=adam_epsilon)
 
     assign_old_eq_new = U.function([], [], updates=[tf.assign(oldv, newv)
                                                     for (oldv, newv) in
@@ -155,7 +157,8 @@ def learn(env, policy_fn, *,
     compute_losses = U.function([ob, ac, ch, atarg, ret, lrmult, st], losses)
 
     U.initialize()
-    adam.sync()
+    adam_ac.sync()
+    adam_dec.sync()
 
     # Prepare for rollouts
     # ----------------------------------------
@@ -193,12 +196,12 @@ def learn(env, policy_fn, *,
         else:
             raise NotImplementedError
 
-        is_learn_choice = (((iters_so_far % 4) == 0) or ((iters_so_far % 4) == 1))
+        #is_learn_choice = ((iters_so_far % 2) == 0)
 
         logger.log("********** Iteration %i ************" % iters_so_far)
 
         seg = seg_gen.__next__()
-        seg = seg_gen.send(is_learn_choice)
+        seg = seg_gen.send(True)
         add_vtarg_and_adv(seg, gamma, lam)
 
         # ob, ac, atarg, ret, td1ret = map(np.concatenate, (obs, acs, atargs, rets, td1rets))
@@ -217,14 +220,18 @@ def learn(env, policy_fn, *,
         for _ in range(optim_epochs):
             losses = []  # list of tuples, each of which gives the loss for a minibatch
             for batch in d.iterate_once(optim_batchsize):
-                stochastic = is_learn_choice
-                if is_learn_choice:
-                    *newlosses, g = lossandgrad_ch(batch["ob"], batch["ac"], batch["ch"], batch["atarg"],
-                                                   batch["vtarg"], cur_lrmult, stochastic)
-                else:
-                    *newlosses, g = lossandgrad_ac(batch["ob"], batch["ac"], batch["ch"], batch["atarg"],
-                                                   batch["vtarg"], cur_lrmult, stochastic)
-                adam.update(g, optim_stepsize * cur_lrmult)
+                *newlosses, g = lossandgrad_ch(batch["ob"], batch["ac"], batch["ch"], batch["atarg"],
+                                                   batch["vtarg"], cur_lrmult, True)
+                adam_dec.update(g, optim_stepsize * cur_lrmult)
+                losses.append(newlosses)
+            logger.log(fmt_row(13, np.mean(losses, axis=0)))
+
+        for _ in range(optim_epochs):
+            losses = []  # list of tuples, each of which gives the loss for a minibatch
+            for batch in d.iterate_once(optim_batchsize):
+                *newlosses, g = lossandgrad_ac(batch["ob"], batch["ac"], batch["ch"], batch["atarg"],
+                                               batch["vtarg"], cur_lrmult, True)
+                adam_ac.update(g, optim_stepsize * cur_lrmult)
                 losses.append(newlosses)
             logger.log(fmt_row(13, np.mean(losses, axis=0)))
 
@@ -232,7 +239,7 @@ def learn(env, policy_fn, *,
         losses = []
         for batch in d.iterate_once(optim_batchsize):
             newlosses = compute_losses(batch["ob"], batch["ac"], batch["ch"], batch["atarg"], batch["vtarg"],
-                                       cur_lrmult, stochastic)
+                                       cur_lrmult, True)
             losses.append(newlosses)
         meanlosses, _, _ = mpi_moments(losses, axis=0)
         logger.log(fmt_row(13, meanlosses))
