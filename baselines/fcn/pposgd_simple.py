@@ -33,7 +33,7 @@ def traj_segment_generator(pi, env, horizon):
 
     while True:
         prevac = ac
-        ac, ch, vpred = pi.act(stochastic, ob)
+        ac, ch, vpred = pi.act(stochastic, stochastic, ob)
         # Slight weirdness here because we need value function at time T
         # before returning segment [0, T-1] so we get the correct
         # terminal value
@@ -111,7 +111,8 @@ def learn(env, policy_fn, *,
     clip_param = clip_param * lrmult  # Annealed clipping parameter epsilon
 
     ob = U.get_placeholder_cached(name="ob")
-    st = tf.get_default_graph().get_tensor_by_name('pi/stu:0')
+    st_ch = tf.get_default_graph().get_tensor_by_name('pi/stu_ch:0')
+    st_ac = tf.get_default_graph().get_tensor_by_name('pi/stu_ac:0')
 
     ch = pi.cpdtype.sample_placeholder([None])
     ac = pi.pdtype.sample_placeholder([None])
@@ -146,15 +147,15 @@ def learn(env, policy_fn, *,
     var_list_ac = [var for var in var_list_temp if not('dec' in var.name)]
     var_list_dec = [var for var in var_list_temp if ('dec' in var.name)]
 
-    lossandgrad_ch = U.function([ob, ac, ch, atarg, ret, lrmult, st], losses + [U.flatgrad(total_loss_ch, var_list_dec)])
-    lossandgrad_ac = U.function([ob, ac, ch, atarg, ret, lrmult, st], losses + [U.flatgrad(total_loss_ac, var_list_ac)])
+    lossandgrad_ch = U.function([ob, ac, ch, atarg, ret, lrmult, st_ch, st_ac], losses + [U.flatgrad(total_loss_ch, var_list_dec)])
+    lossandgrad_ac = U.function([ob, ac, ch, atarg, ret, lrmult, st_ch, st_ac], losses + [U.flatgrad(total_loss_ac, var_list_ac)])
     adam_ac = MpiAdam(var_list_ac, epsilon=adam_epsilon)
     adam_dec = MpiAdam(var_list_dec, epsilon=adam_epsilon)
 
     assign_old_eq_new = U.function([], [], updates=[tf.assign(oldv, newv)
                                                     for (oldv, newv) in
                                                     zipsame(oldpi.get_variables(), pi.get_variables())])
-    compute_losses = U.function([ob, ac, ch, atarg, ret, lrmult, st], losses)
+    compute_losses = U.function([ob, ac, ch, atarg, ret, lrmult, st_ch, st_ac], losses)
 
     U.initialize()
     adam_ac.sync()
@@ -221,7 +222,7 @@ def learn(env, policy_fn, *,
             losses = []  # list of tuples, each of which gives the loss for a minibatch
             for batch in d.iterate_once(optim_batchsize):
                 *newlosses, g = lossandgrad_ch(batch["ob"], batch["ac"], batch["ch"], batch["atarg"],
-                                                   batch["vtarg"], cur_lrmult, True)
+                                                   batch["vtarg"], cur_lrmult, True, False)
                 adam_dec.update(g, optim_stepsize * cur_lrmult)
                 losses.append(newlosses)
             logger.log(fmt_row(13, np.mean(losses, axis=0)))
@@ -230,7 +231,7 @@ def learn(env, policy_fn, *,
             losses = []  # list of tuples, each of which gives the loss for a minibatch
             for batch in d.iterate_once(optim_batchsize):
                 *newlosses, g = lossandgrad_ac(batch["ob"], batch["ac"], batch["ch"], batch["atarg"],
-                                               batch["vtarg"], cur_lrmult, True)
+                                               batch["vtarg"], cur_lrmult, False, True)
                 adam_ac.update(g, optim_stepsize * cur_lrmult)
                 losses.append(newlosses)
             logger.log(fmt_row(13, np.mean(losses, axis=0)))
