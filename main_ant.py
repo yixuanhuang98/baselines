@@ -1,5 +1,5 @@
 import os
-env_id = "InvertedDoublePendulum-v2"
+env_id = "Ant-v2"
 seed_list = [1,2,3,4,5]
 reward_scale_list=[0.1]
 for seed in seed_list:
