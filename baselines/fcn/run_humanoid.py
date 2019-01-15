@@ -48,7 +48,9 @@ class RewScale(gym.RewardWrapper):
 def main():
     logger.configure()
     parser = mujoco_arg_parser()
-    parser.add_argument('--model-path', default=os.path.join(logger.get_dir(), 'humanoid_policy'))
+
+    # specify model path will save the model
+    parser.add_argument('--model-path', default=os.path.join(logger.get_dir(), args.env+'_policy'))
     parser.set_defaults(num_timesteps=int(2e6))
     parser.set_defaults(num_actors=int(3))
 
@@ -60,13 +62,19 @@ def main():
     else:
         # construct the model object, load pre-trained model and render
         pi = train(num_timesteps=1, seed=args.seed)
+
+        # load the saved model
         U.load_state(args.model_path)
-        env = make_mujoco_env('Humanoid-v2', seed=0)
+        env = make_mujoco_env(args.env, seed=args.seed)
 
         ob = env.reset()
         while True:
             action = pi.act(stochastic=False, ob=ob)[0]
+            #TODO: Add noise to action
+
             ob, _, done, _ =  env.step(action)
+            #TODO: add noise to observation
+
             env.render()
             if done:
                 ob = env.reset()
