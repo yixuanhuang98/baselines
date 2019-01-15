@@ -53,20 +53,10 @@ def plot2(seeds, reward_scale, alg, env_id, e):
     return tss, max, min, mean
 
 
-env_id = "HalfCheetah-v2"
+env_ids = ["Walker2d-v2", "Hopper-v2", "Swimmer-v2", "Humanoid-v2", "HalfCheetah-v2"]
 seeds = [1,2,3,4,5]
 reward_scale = 0.1
-algs = ['fcn']
-for alg in algs:
+alg = 'fcn'
+for env_id in env_ids:
     ts, ma, mi, avg = plot2(seeds, reward_scale, alg, env_id, "_sserg")
-    print(np.amax(avg))
-    plt.fill_between(ts, ma,mi, alpha=0.5)
-    plt.plot(ts, avg, label="{}".format(alg))
-
-plt.title(env_id)
-plt.legend(loc=4)
-plt.xlabel('Number of Timesteps')
-plt.ylabel('Rewards')
-
-
-plt.savefig("./check/"+env_id+'.png')
+    print(env_id + ": ", np.amax(avg))
