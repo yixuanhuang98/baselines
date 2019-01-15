@@ -3,6 +3,7 @@ import os
 from baselines.common.cmd_util import make_mujoco_env, mujoco_arg_parser
 from baselines.common import tf_util as U
 from baselines import logger
+import numpy as np
 
 import gym
 
@@ -51,6 +52,8 @@ def main():
 
     # specify model path will save the model
     parser.add_argument('--model-path', default=os.path.join(logger.get_dir(), args.env+'_policy'))
+    parser.add_argument('--obstd', default=0)
+    parser.add_argument('--acstd', default=0)
     parser.set_defaults(num_timesteps=int(2e6))
     parser.set_defaults(num_actors=int(3))
 
@@ -68,19 +71,31 @@ def main():
         env = make_mujoco_env(args.env, seed=args.seed)
 
         ob = env.reset()
-        while True:
-            action = pi.act(stochastic=False, ob=ob)[0]
-            #TODO: Add noise to action
 
-            ob, _, done, _ =  env.step(action)
+        timestep = 0
+
+        rews = []
+
+        while timestep < args.num_timesteps:
+            action = pi.act(stochastic=False, ob=ob)[0]
+            timestep += 1
+            #TODO: Add noise to action
+            if acstd:
+                action = action + np.random.normal(0,arg.acstd,action.shape)
+
+            ob, rew, done, _ =  env.step(action)
+            rews.append(rew)
             #TODO: add noise to observation
+            if obstd:
+                ob = ob + np.random.normal(0,arg.obstd,ob.shape)
 
             env.render()
             if done:
                 ob = env.reset()
+                if obstd:
+                    ob = ob + np.random.normal(0,arg.obstd,ob.shape)
 
-
-
+        print("average reward: %d" % np.mean(rews))
 
 if __name__ == '__main__':
     main()
