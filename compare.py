@@ -53,9 +53,9 @@ def plot2(seeds, reward_scale, alg, env_id, e):
     return tss, max, min, mean
 
 
-env_id = "Humanoid-v2"
+env_id = "HalfCheetah-v2"
 seeds = [1,2,3,4,5]
-reward_scale = 1.0
+reward_scale = 0.1
 algs = ['fcn']
 for alg in algs:
     ts, ma, mi, avg = plot2(seeds, reward_scale, alg, env_id, "_sserg")
