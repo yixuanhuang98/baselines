@@ -64,7 +64,7 @@ def main():
         train(env_id = args.env,num_timesteps=args.num_timesteps, seed=args.seed, model_path=args.model_path, num_actors = args.num_actors, ratio=args.reward_scale)
     else:
         # construct the model object, load pre-trained model and render
-        pi = train(env_id = args.env,num_timesteps=1, seed=args.seed, model_path=args.model_path, num_actors = args.num_actors, ratio=args.reward_scale)
+        pi = train(env_id = args.env,num_timesteps=1, seed=args.seed, num_actors = args.num_actors, ratio=args.reward_scale)
         # load the saved model
         U.load_state(args.model_path)
         env = make_mujoco_env(args.env, seed=args.seed)
@@ -79,8 +79,8 @@ def main():
             action = pi.act(stochastic=False, ob=ob)[0]
             timestep += 1
             #TODO: Add noise to action
-            #if args.acstd:
-            action = action + np.random.normal(0,0.1,action.shape)
+            if args.acstd:
+                action = action + np.random.normal(0,float(args.acstd),action.shape)
 
             ob, rew, done, _ =  env.step(action)
             rews.append(rew)
@@ -88,13 +88,13 @@ def main():
                 print(rew)
             #TODO: add noise to observation
             if args.obstd:
-                ob = ob + np.random.normal(0,args.obstd,ob.shape)
+                ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
 
             #env.render()
             if done:
                 ob = env.reset()
                 if args.obstd:
-                    ob = ob + np.random.normal(0,args.obstd,ob.shape)
+                    ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
 
         print("average reward: %d" % np.mean(rews))
 

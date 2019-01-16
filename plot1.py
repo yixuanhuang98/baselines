@@ -39,6 +39,7 @@ reward_scale=0.1
 algs = ['fcn','nlfcn']
 for alg in algs:
     ts, ma, mi, avg = plot(seeds, reward_scale, alg, env_id)
+    print(alg + ": " + str(max(avg)))
     plt.fill_between(ts, ma,mi, alpha=0.5)
     plt.plot(ts, avg, label="{}".format(alg))
 
@@ -47,7 +48,9 @@ reward_scale=0.1
 algs = ['ppo1','scn','linear','scn64']
 for alg in algs:
     ts, ma, mi, avg = plot(seeds, reward_scale, alg, env_id)
+    print(alg + ": " + str(max(avg)))
     plt.fill_between(ts, ma,mi, alpha=0.5)
+
     plt.plot(ts, avg, label="{}".format(alg))
 
 plt.title(env_id)
