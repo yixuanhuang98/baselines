@@ -71,32 +71,38 @@ def main():
 
         ob = env.reset()
 
+        if args.obstd:
+            ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
+
         timestep = 0
 
-        rews = []
-
+        eprets = []
         while timestep < args.num_timesteps:
-            action = pi.act(stochastic=False, ob=ob)[0]
+            rews = []
+            action = pi.act(stochastic=True, ob=ob)[0]
             timestep += 1
-            #TODO: Add noise to action
+            #Add noise to action
             if args.acstd:
                 action = action + np.random.normal(0,float(args.acstd),action.shape)
 
             ob, rew, done, _ =  env.step(action)
             rews.append(rew)
-            if timestep % 100 == 0:
-                print(rew)
-            #TODO: add noise to observation
+
+            #add noise to observation
             if args.obstd:
                 ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
 
             #env.render()
             if done:
                 ob = env.reset()
+                epret = np.sum(rews)
+                print(epret)
+                eprets.append(epret)
+                rews = []
                 if args.obstd:
                     ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
 
-        print("average reward: %d" % np.mean(rews))
+        print("average reward: %f" % np.mean(eprets))
 
 if __name__ == '__main__':
     main()
