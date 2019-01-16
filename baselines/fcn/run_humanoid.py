@@ -74,13 +74,12 @@ def main():
         if args.obstd:
             ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
 
-        timestep = 0
+        eps = 0
 
         eprets = []
-        while timestep < args.num_timesteps:
-            rews = []
+        rews = []
+        while eps < args.num_timesteps:
             action = pi.act(stochastic=True, ob=ob)[0]
-            timestep += 1
             #Add noise to action
             if args.acstd:
                 action = action + np.random.normal(0,float(args.acstd),action.shape)
@@ -94,6 +93,7 @@ def main():
 
             #env.render()
             if done:
+                eps +=1 
                 ob = env.reset()
                 epret = np.sum(rews)
                 print(epret)
