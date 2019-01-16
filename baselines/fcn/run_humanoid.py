@@ -51,9 +51,9 @@ def main():
     parser = mujoco_arg_parser()
 
     # specify model path will save the model
-    parser.add_argument('--model-path', default=os.path.join(logger.get_dir(), args.env+'_policy'))
-    parser.add_argument('--obstd', default=0)
-    parser.add_argument('--acstd', default=0)
+    parser.add_argument('--model-path', default=os.path.join(logger.get_dir(), 'Walker2d_policy'))
+    parser.add_argument('--obstd', default=float(0))
+    parser.add_argument('--acstd', default=float(0))
     parser.set_defaults(num_timesteps=int(2e6))
     parser.set_defaults(num_actors=int(3))
 
@@ -64,8 +64,7 @@ def main():
         train(env_id = args.env,num_timesteps=args.num_timesteps, seed=args.seed, model_path=args.model_path, num_actors = args.num_actors, ratio=args.reward_scale)
     else:
         # construct the model object, load pre-trained model and render
-        pi = train(num_timesteps=1, seed=args.seed)
-
+        pi = train(env_id = args.env,num_timesteps=1, seed=args.seed, model_path=args.model_path, num_actors = args.num_actors, ratio=args.reward_scale)
         # load the saved model
         U.load_state(args.model_path)
         env = make_mujoco_env(args.env, seed=args.seed)
@@ -80,20 +79,22 @@ def main():
             action = pi.act(stochastic=False, ob=ob)[0]
             timestep += 1
             #TODO: Add noise to action
-            if acstd:
-                action = action + np.random.normal(0,arg.acstd,action.shape)
+            #if args.acstd:
+            action = action + np.random.normal(0,0.1,action.shape)
 
             ob, rew, done, _ =  env.step(action)
             rews.append(rew)
+            if timestep % 100 == 0:
+                print(rew)
             #TODO: add noise to observation
-            if obstd:
-                ob = ob + np.random.normal(0,arg.obstd,ob.shape)
+            if args.obstd:
+                ob = ob + np.random.normal(0,args.obstd,ob.shape)
 
-            env.render()
+            #env.render()
             if done:
                 ob = env.reset()
-                if obstd:
-                    ob = ob + np.random.normal(0,arg.obstd,ob.shape)
+                if args.obstd:
+                    ob = ob + np.random.normal(0,args.obstd,ob.shape)
 
         print("average reward: %d" % np.mean(rews))
 
