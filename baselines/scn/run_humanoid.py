@@ -3,7 +3,7 @@ import os
 from baselines.common.cmd_util import make_mujoco_env, mujoco_arg_parser
 from baselines.common import tf_util as U
 from baselines import logger
-
+import numpy as np
 import gym
 
 def train(env_id,num_timesteps, seed, model_path=None, ratio=0.1):

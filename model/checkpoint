@@ -1,2 +1,2 @@
-model_checkpoint_path: "fcn_wk2d"
-all_model_checkpoint_paths: "fcn_wk2d"
+model_checkpoint_path: "scn_idp"
+all_model_checkpoint_paths: "scn_idp"
