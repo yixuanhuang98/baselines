@@ -107,7 +107,6 @@ def main():
                 rews = []
                 np.savetxt('./baselines/choices.txt',
                            np.asarray(choices))
-                choices = []
                 if args.obstd:
                     ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
 
