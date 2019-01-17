@@ -53,8 +53,8 @@ def plot2(seeds, reward_scale, alg, env_id, e):
     return tss, max, min, mean
 
 
-env_ids = ["Walker2d-v2", "Hopper-v2", "Swimmer-v2", "HalfCheetah-v2"]
-seeds = [1,2,3,4,5]
+env_ids = ["Hopper-v2", "HalfCheetah-v2"]
+seeds = [1,2,3,4,5, 6, 7, 8,9,10]
 reward_scale = 0.1
 alg = 'fcn'
 for env_id in env_ids:
