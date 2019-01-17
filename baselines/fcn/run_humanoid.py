@@ -78,12 +78,13 @@ def main():
 
         eprets = []
         rews = []
+        choices = []
         while eps < args.num_timesteps:
             action, choice, _ = pi.act(stochastic=False, ob=ob)
             # if want to get choice use :
             # action, choice, _  =  pi.act(stochastic=True, ob=ob)
 
-            print(choice)
+            choices.append(choice[0])
 
             #Add noise to action
             if args.acstd:
@@ -104,6 +105,9 @@ def main():
                 print(epret)
                 eprets.append(epret)
                 rews = []
+                choices = []
+                np.savetxt('./baselines/choices.txt',
+                           np.asarray(choices))
                 if args.obstd:
                     ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
 
