@@ -52,8 +52,6 @@ def main():
 
     # specify model path will save the model
     parser.add_argument('--model-path', default=os.path.join(logger.get_dir(), 'Walker2d_policy'))
-    parser.add_argument('--obstd', default=float(0))
-    parser.add_argument('--acstd', default=float(0))
     parser.set_defaults(num_timesteps=int(2e6))
     parser.set_defaults(num_actors=int(3))
 
@@ -67,46 +65,40 @@ def main():
         pi = train(env_id = args.env,num_timesteps=1, seed=args.seed, num_actors = args.num_actors, ratio=args.reward_scale)
         # load the saved model
         U.load_state(args.model_path)
-        env = make_mujoco_env(args.env, seed=args.seed)
+        seeds = range(1,16)
+        stds = []
+        means = []
+        for seed in seeds:
+            env = make_mujoco_env(args.env, seed=seed)
 
-        ob = env.reset()
+            ob = env.reset()
 
-        if args.obstd:
-            ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
+            eps = 0
 
-        eps = 0
+            eprets = []
+            rews = []
+            while eps < args.num_timesteps:
+                action = pi.act(stochastic=False, ob=ob)[0]
+                ob, rew, done, _ =  env.step(action)
+                rews.append(rew)
 
-        eprets = []
-        rews = []
-        while eps < args.num_timesteps:
-            action = pi.act(stochastic=False, ob=ob)[0]
-            # if want to get choice use :
-            # action, choice, _  =  pi.act(stochastic=True, ob=ob)
+                if done:
+                    eps +=1
+                    ob = env.reset()
+                    epret = np.sum(rews)
+                    #print(epret)
+                    eprets.append(epret)
+                    rews = []
 
-            #Add noise to action
-            if args.acstd:
-                action = action + np.random.normal(0,float(args.acstd),action.shape)
+            std = np.std(eprets)
+            stds.append(std)
+            mean = np.mean(eprets)
+            means.append(mean)
+            print("std: %f" % std)
+            print("average reward: %f" % mean)
 
-            ob, rew, done, _ =  env.step(action)
-            rews.append(rew)
-
-            #add noise to observation
-            if args.obstd:
-                ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
-
-            #env.render()
-            if done:
-                eps +=1
-                ob = env.reset()
-                epret = np.sum(rews)
-                print(epret)
-                eprets.append(epret)
-                rews = []
-                if args.obstd:
-                    ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
-
-        print("std: %f" % np.std(eprets))
-        print("average reward: %f" % np.mean(eprets))
+        np.savetxt('./baselines/fcn/data/stds.txt', np.asarray(stds))
+        np.savetxt('./baselines/fcn/data/means.txt', np.asarray(means))
 
 if __name__ == '__main__':
     main()
