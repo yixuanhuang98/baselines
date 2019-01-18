@@ -79,7 +79,7 @@ def main():
         eprets = []
         rews = []
         while eps < args.num_timesteps:
-            action = pi.act(stochastic=True, ob=ob)[0]
+            action = pi.act(stochastic=False, ob=ob)[0]
             # if want to get choice use :
             # action, choice, _  =  pi.act(stochastic=True, ob=ob)
 
