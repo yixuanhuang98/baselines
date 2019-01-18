@@ -98,7 +98,7 @@ def main():
                 if args.obstd:
                     ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
 
-        print("variance: %f" % np.var(eprets))
+        print("variance: %f" % np.std(eprets))
         print("average reward: %f" % np.mean(eprets))
 
 if __name__ == '__main__':
