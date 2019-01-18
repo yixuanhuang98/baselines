@@ -93,8 +93,8 @@ def main():
             print("std: %f" % std)
             print("average reward: %f" % mean)
 
-        np.savetxt('./baselines/scn/data/stds.txt', np.asarray(stds))
-        np.savetxt('./baselines/scn/data/means.txt', np.asarray(means))
+        np.savetxt('./baselines/scn/data/'+args.env+'_s'+str(args.seed)+'_stds.txt', np.asarray(stds))
+        np.savetxt('./baselines/scn/data/'+args.env+'_s'+str(args.seed)+'_means.txt', np.asarray(means))
 
 if __name__ == '__main__':
     main()
