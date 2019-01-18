@@ -40,15 +40,15 @@ algs = ['fcn','scn']
 for alg in algs:
     #ts, ma, mi, avg = plot(seeds, reward_scale, alg, env_id)
     #plt.fill_between(ts, ma,mi, alpha=0.5)
-    means = np.loadtxt('./baselines/' + alg + '/data/means.txt')
+    #means = np.loadtxt('./baselines/' + alg + '/data/means.txt')
     stds = np.loadtxt('./baselines/' + alg + '/data/stds.txt')
     seeds = range(1,16)
-    plt.plot(seeds, means, label="{}".format(alg))
+    plt.plot(seeds, stds, label="{}".format(alg))
 
 plt.title("Hopper-v2")
 plt.legend(loc=4)
 plt.xlabel('Random Seed')
-plt.ylabel('Mean Episode Reward')
+plt.ylabel('Standard Deviation')
 
 plt.show()
 
