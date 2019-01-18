@@ -37,16 +37,31 @@ env_id = "Hopper-v2"
 #seeds = [1,2,3,4,5]
 #reward_scale=0.1
 algs = ['fcn']
-seed = 11
-for alg in algs:
-    #ts, ma, mi, avg = plot(seeds, reward_scale, alg, env_id)
-    #plt.fill_between(ts, ma,mi, alpha=0.5)
-    #means = np.loadtxt('./baselines/' + alg + '/data/means.txt')
-    stds = np.loadtxt('./baselines/' + alg + '/data/'+env_id+'_s'+seed+'_stds.txt')
-    seeds = range(1,16)
-    plt.plot(seeds, stds, label="{}".format(alg))
-
+seeds = range(11,16)
 plt.title("Hopper-v2")
+plt.subplot(1,2,1)
+for seed in seeds:
+    for alg in algs:
+        means = np.loadtxt('./baselines/' + alg + '/data/'+env_id+'_s'+str(seed)+'_means.txt')
+        tseeds = range(1,16)
+        plt.plot(tseeds, means, label="{}-{}".format(alg, seed))
+
+
+
+plt.legend(loc=4)
+plt.xlabel('Random Seed')
+plt.ylabel('Mean Reward')
+
+
+
+
+plt.subplot(1,2,2)
+for seed in seeds:
+    for alg in algs:
+        stds = np.loadtxt('./baselines/' + alg + '/data/'+env_id+'_s'+str(seed)+'_stds.txt')
+        tseeds = range(1,16)
+        plt.plot(tseeds, stds, label="{}-{}".format(alg, seed))
+
 plt.legend(loc=4)
 plt.xlabel('Random Seed')
 plt.ylabel('Standard Deviation')
