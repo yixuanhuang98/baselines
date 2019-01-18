@@ -49,8 +49,6 @@ def main():
     logger.configure()
     parser = mujoco_arg_parser()
     parser.add_argument('--model-path', default=os.path.join(logger.get_dir(), 'humanoid_policy'))
-    parser.add_argument('--obstd', default=float(0))
-    parser.add_argument('--acstd', default=float(0))
     parser.set_defaults(num_timesteps=int(2e6))
 
     args = parser.parse_args()
@@ -63,43 +61,40 @@ def main():
         pi = train(env_id = args.env,num_timesteps=1, seed=args.seed)
         U.load_state(args.model_path)
 
-        env = make_mujoco_env(args.env, seed=args.seed)
+        seeds = range(1, 16)
+        stds = []
+        means = []
+        for seed in seeds:
+            env = make_mujoco_env(args.env, seed=seed)
 
-        ob = env.reset()
+            ob = env.reset()
 
-        if args.obstd:
-            ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
+            eps = 0
 
-        eps = 0
+            eprets = []
+            rews = []
+            while eps < args.num_timesteps:
+                action = pi.act(stochastic=False, ob=ob)[0]
+                ob, rew, done, _ = env.step(action)
+                rews.append(rew)
 
-        eprets = []
-        rews = []
-        while eps < args.num_timesteps:
-            action = pi.act(stochastic=False, ob=ob)[0]
-            #Add noise to action
-            if args.acstd:
-                action = action + np.random.normal(0,float(args.acstd),action.shape)
+                if done:
+                    eps += 1
+                    ob = env.reset()
+                    epret = np.sum(rews)
+                    # print(epret)
+                    eprets.append(epret)
+                    rews = []
 
-            ob, rew, done, _ =  env.step(action)
-            rews.append(rew)
+            std = np.std(eprets)
+            stds.append(std)
+            mean = np.mean(eprets)
+            means.append(mean)
+            print("std: %f" % std)
+            print("average reward: %f" % mean)
 
-            #add noise to observation
-            if args.obstd:
-                ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
-
-            #env.render()
-            if done:
-                eps +=1
-                ob = env.reset()
-                epret = np.sum(rews)
-                print(epret)
-                eprets.append(epret)
-                rews = []
-                if args.obstd:
-                    ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
-
-        print("variance: %f" % np.std(eprets))
-        print("average reward: %f" % np.mean(eprets))
+        np.savetxt('./baselines/scn/data/stds.txt', np.asarray(stds))
+        np.savetxt('./baselines/scn/data/means.txt', np.asarray(means))
 
 if __name__ == '__main__':
     main()
