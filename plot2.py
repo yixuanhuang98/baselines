@@ -37,7 +37,7 @@ env_id = "Hopper-v2"
 #seeds = [1,2,3,4,5]
 #reward_scale=0.1
 algs = ['scn']
-seeds = range(11,12)
+seeds = range(11,16)
 plt.title("Hopper-v2")
 plt.subplot(1,2,1)
 for seed in seeds:
@@ -51,6 +51,8 @@ for seed in seeds:
 plt.legend(loc=4)
 plt.xlabel('Random Seed')
 plt.ylabel('Mean Reward')
+axes = plt.gca()
+axes.set_ylim([2000,3800])
 
 
 
@@ -65,6 +67,8 @@ for seed in seeds:
 plt.legend(loc=4)
 plt.xlabel('Random Seed')
 plt.ylabel('Standard Deviation')
+axes = plt.gca()
+axes.set_ylim([0, 1200])
 
 plt.show()
 
