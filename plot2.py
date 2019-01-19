@@ -40,14 +40,17 @@ algs = ['fcn']
 seeds = range(11,16)
 plt.title("Hopper-v2")
 
-plt.subplot(1,2,1)
+#plt.subplot(1,2,1)
+m = []
 for seed in seeds:
     for alg in algs:
         means = np.loadtxt('./baselines/' + alg + '/data/'+env_id+'_s'+str(seed)+'_means.txt')
+        m.append(np.mean(means))
         tseeds = range(1,16)
         plt.plot(tseeds, means, label="{}-{}".format(alg, seed))
 
-
+print('Mean: ', np.mean(m))
+print('Std: ', np.std(m))
 
 plt.legend(loc=4)
 plt.xlabel('Random Seed')
@@ -58,18 +61,18 @@ axes.set_ylim([2000,3800])
 
 
 
-plt.subplot(1,2,2)
-for seed in seeds:
-    for alg in algs:
-        stds = np.loadtxt('./baselines/' + alg + '/data/'+env_id+'_s'+str(seed)+'_stds.txt')
-        tseeds = range(1,16)
-        plt.plot(tseeds, stds, label="{}-{}".format(alg, seed))
+#plt.subplot(1,2,2)
+#for seed in seeds:
+#    for alg in algs:
+#        stds = np.loadtxt('./baselines/' + alg + '/data/'+env_id+'_s'+str(seed)+'_stds.txt')
+#        tseeds = range(1,16)
+#        plt.plot(tseeds, stds, label="{}-{}".format(alg, seed))
 
-plt.legend(loc=4)
-plt.xlabel('Random Seed')
-plt.ylabel('Standard Deviation')
-axes = plt.gca()
-axes.set_ylim([0, 1200])
+#plt.legend(loc=4)
+#plt.xlabel('Random Seed')
+#plt.ylabel('Standard Deviation')
+#axes = plt.gca()
+#axes.set_ylim([0, 1200])
 
 plt.show()
 
