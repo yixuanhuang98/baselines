@@ -1,2 +1,2 @@
-model_checkpoint_path: "scn_ho_15"
-all_model_checkpoint_paths: "scn_ho_15"
+model_checkpoint_path: "scn_ho_8"
+all_model_checkpoint_paths: "scn_ho_8"
