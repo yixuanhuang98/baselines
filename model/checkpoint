@@ -1,2 +1,2 @@
-model_checkpoint_path: "fcn_hu_8"
-all_model_checkpoint_paths: "fcn_hu_8"
+model_checkpoint_path: "scn_hu_10"
+all_model_checkpoint_paths: "scn_hu_10"
