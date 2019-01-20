@@ -61,7 +61,7 @@ def main():
         pi = train(env_id = args.env,num_timesteps=1, seed=args.seed)
         U.load_state(args.model_path)
 
-        seeds = range(1, 201)
+        seeds = range(1, 16)
         stds = []
         means = []
         for seed in seeds:
@@ -90,8 +90,8 @@ def main():
             stds.append(std)
             mean = np.mean(eprets)
             means.append(mean)
-            print("std: %f" % std)
             print("average reward: %f" % mean)
+            print("Seed: %f" % seed)
 
         np.savetxt('./baselines/scn/data/'+args.env+'_s'+str(args.seed)+'_stds.txt', np.asarray(stds))
         np.savetxt('./baselines/scn/data/'+args.env+'_s'+str(args.seed)+'_means.txt', np.asarray(means))
