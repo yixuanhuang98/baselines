@@ -36,27 +36,32 @@ def plot(seeds, reward_scale, alg, env_id):
 env_id = "Hopper-v2"
 #seeds = [1,2,3,4,5]
 #reward_scale=0.1
-algs = ['scn']
+algs = ['fcn','scn']
 seeds = range(11,16)
 plt.title("Hopper-v2")
 #plt.subplot(1,2,1)
 
-m = []
-for seed in seeds:
-    for alg in algs:
+
+for alg in algs:
+    m = []
+    std = []
+    for seed in seeds:
         means = np.loadtxt('./baselines/' + alg + '/data/'+env_id+'_s'+str(seed)+'_means.txt')
         m.append(np.mean(means))
+        std.append(np.std(means))
         tseeds = range(1,16)
-        plt.plot(tseeds, means, label="{}-{}".format(alg, seed))
+        #plt.plot(tseeds, means, label="{}-{}".format(alg, seed))
 
+    plt.errorbar(range(11, 16), m, std,  linestyle='None', marker='.', capsize=3, label="{}".format(alg))
 
 print('Mean: ', np.mean(m))
 print('Std: ', np.std(m))
 plt.legend(loc=4)
 plt.xlabel('Random Seed')
 plt.ylabel('Mean Reward')
-axes = plt.gca()
-axes.set_ylim([2000,3800])
+plt.xticks(range(11,16))
+#axes = plt.gca()
+#axes.set_ylim([2800,3800])
 
 
 
