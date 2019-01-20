@@ -33,9 +33,9 @@ def plot(seeds, reward_scale, alg, env_id):
 
 
 
-env_id = "Swimmer-v2"
+env_id = "InvertedDoublePendulum-v2"
 seeds = [1,2,3,4,5]
-reward_scale=1.0
+reward_scale=0.1
 algs = ['fcn','nlfcn']
 for alg in algs:
     ts, ma, mi, avg = plot(seeds, reward_scale, alg, env_id)
@@ -43,8 +43,8 @@ for alg in algs:
     plt.plot(ts, avg, label="{}".format(alg))
 
 seeds = [1,2,3,4,5]
-reward_scale=1.0
-algs = ['ppo1','scn','linear']
+reward_scale=0.1
+algs = ['ppo1','scn','linear','scn64']
 for alg in algs:
     ts, ma, mi, avg = plot(seeds, reward_scale, alg, env_id)
     plt.fill_between(ts, ma,mi, alpha=0.5)
