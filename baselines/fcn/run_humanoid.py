@@ -79,7 +79,7 @@ def main():
         eprets = []
         rews = []
         while eps < args.num_timesteps:
-            action = pi.act(stochastic=True, ob=ob)[0]
+            action = pi.act(stochastic=False, ob=ob)[0]
             #Add noise to action
             if args.acstd:
                 action = action + np.random.normal(0,float(args.acstd),action.shape)
@@ -103,6 +103,8 @@ def main():
                     ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
 
         print("average reward: %f" % np.mean(eprets))
-
+        f = open('noise.txt','a+')
+	f.write("%f\n" % np.mean(eprets))
+	f.close()
 if __name__ == '__main__':
     main()

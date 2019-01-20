@@ -1,2 +1,2 @@
-model_checkpoint_path: "scn_idp"
-all_model_checkpoint_paths: "scn_idp"
+model_checkpoint_path: "scn_hm5"
+all_model_checkpoint_paths: "scn_hm5"
