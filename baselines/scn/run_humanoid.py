@@ -61,7 +61,7 @@ def main():
         pi = train(env_id = args.env,num_timesteps=1, seed=args.seed)
         U.load_state(args.model_path)
 
-        seeds = range(1, 16)
+        seeds = range(1, 201)
         stds = []
         means = []
         for seed in seeds:
