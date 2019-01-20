@@ -41,7 +41,7 @@ class FcnPolicy(object):
 
         # get the choice probability distribution
         self.cpd = cpdtype.pdfromflat(hidden_decision)
-        self.choice = ch = self.cpd.sample()
+        self.choice = ch = self.cpd.mode()
 
         with tf.variable_scope('pol'):
             last_outs = []
