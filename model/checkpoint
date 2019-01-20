@@ -1,0 +1,2 @@
+model_checkpoint_path: "fcn_hu_8"
+all_model_checkpoint_paths: "fcn_hu_8"
