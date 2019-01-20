@@ -52,6 +52,8 @@ def main():
 
     # specify model path will save the model
     parser.add_argument('--model-path', default=os.path.join(logger.get_dir(), 'Walker2d_policy'))
+    parser.add_argument('--obstd', default=float(0))
+    parser.add_argument('--acstd', default=float(0))
     parser.set_defaults(num_timesteps=int(2e6))
     parser.set_defaults(num_actors=int(3))
 
@@ -77,28 +79,34 @@ def main():
 
             eprets = []
             rews = []
-            while eps < args.num_timesteps:
-                action = pi.act(stochastic=False, ob=ob)[0]
-                ob, rew, done, _ =  env.step(action)
-                rews.append(rew)
+        while eps < args.num_timesteps:
+            action = pi.act(stochastic=False, ob=ob)[0]
+            #Add noise to action
+            if args.acstd:
+                action = action + np.random.normal(0,float(args.acstd),action.shape)
 
-                if done:
-                    eps +=1
-                    ob = env.reset()
-                    epret = np.sum(rews)
-                    #print(epret)
-                    eprets.append(epret)
-                    rews = []
+            ob, rew, done, _ =  env.step(action)
+            rews.append(rew)
 
-            std = np.std(eprets)
-            stds.append(std)
-            mean = np.mean(eprets)
-            means.append(mean)
-            print("std: %f" % std)
-            print("average reward: %f" % mean)
+            #add noise to observation
+            if args.obstd:
+                ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
 
-        np.savetxt('./baselines/fcn/data/'+args.env+'_s'+str(args.seed)+'_stds.txt', np.asarray(stds))
-        np.savetxt('./baselines/fcn/data/'+args.env+'_s'+str(args.seed)+'_means.txt', np.asarray(means))
+            #env.render()
+            if done:
+                eps +=1
+                ob = env.reset()
+                epret = np.sum(rews)
+                print(epret)
+                eprets.append(epret)
+                rews = []
+                if args.obstd:
+                    ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
+
+        print("average reward: %f" % np.mean(eprets))
+        f = open('noise.txt','a+')
+        f.write("%f\t" % np.mean(eprets))
+        f.close()
 
 if __name__ == '__main__':
     main()

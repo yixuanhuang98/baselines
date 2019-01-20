@@ -3,7 +3,7 @@ import os
 from baselines.common.cmd_util import make_mujoco_env, mujoco_arg_parser
 from baselines.common import tf_util as U
 from baselines import logger
-
+import numpy as np
 import gym
 
 def train(env_id,num_timesteps, seed, model_path=None, ratio=0.1):
@@ -48,6 +48,9 @@ class RewScale(gym.RewardWrapper):
 def main():
     logger.configure()
     parser = mujoco_arg_parser()
+    parser.add_argument('--obstd', default=float(0))
+    parser.add_argument('--acstd', default=float(0))
+
     parser.add_argument('--model-path', default=os.path.join(logger.get_dir(), 'humanoid_policy'))
     parser.set_defaults(num_timesteps=int(2e6))
 
@@ -58,20 +61,49 @@ def main():
         train(env_id = args.env,num_timesteps=args.num_timesteps, seed=args.seed, model_path=args.model_path, ratio=args.reward_scale)
     else:
         # construct the model object, load pre-trained model and render
-        pi = train(num_timesteps=1, seed=args.seed)
+        pi = train(env_id = args.env,num_timesteps=1, seed=args.seed)
         U.load_state(args.model_path)
-        env = make_mujoco_env('Humanoid-v2', seed=0)
 
-        ob = env.reset()
-        while True:
+        seeds = range(1, 16)
+        stds = []
+        means = []
+        for seed in seeds:
+            env = make_mujoco_env(args.env, seed=seed)
+
+            ob = env.reset()
+
+            eps = 0
+
+            eprets = []
+            rews = []
+        while eps < args.num_timesteps:
             action = pi.act(stochastic=False, ob=ob)[0]
-            ob, _, done, _ =  env.step(action)
-            env.render()
+            #Add noise to action
+            if args.acstd:
+                action = action + np.random.normal(0,float(args.acstd),action.shape)
+
+            ob, rew, done, _ =  env.step(action)
+            rews.append(rew)
+
+            #add noise to observation
+            if args.obstd:
+                ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
+
+            #env.render()
             if done:
+                eps +=1
                 ob = env.reset()
+                epret = np.sum(rews)
+                print(epret)
+                eprets.append(epret)
+                rews = []
+                if args.obstd:
+                    ob = ob + np.random.normal(0,float(args.obstd),ob.shape)
 
-
-
+        print("average reward: %f" % np.mean(eprets))
+        f = open('noise.txt','a+')
+        f.write("%f\t" % np.mean(eprets))
+        f.close()
 
 if __name__ == '__main__':
     main()
