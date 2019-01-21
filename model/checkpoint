@@ -1,2 +1,2 @@
-model_checkpoint_path: "mlp_hu_1"
-all_model_checkpoint_paths: "mlp_hu_1"
+model_checkpoint_path: "linear_ho_15"
+all_model_checkpoint_paths: "linear_ho_15"
