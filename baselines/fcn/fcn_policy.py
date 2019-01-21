@@ -54,7 +54,7 @@ class FcnPolicy(object):
             masks = tf.gather(self.masks, ch)
             masks = tf.cast(masks,tf.float32)
 
-            last_out = tf.math.multiply(last_out, masks)
+            last_out = tf.multiply(last_out, masks)
 
             if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
                 mean = tf.layers.dense(last_out,pdtype.param_shape()[0]//2,name="fc2",kernel_initializer=U.normc_initializer(0.01))
@@ -82,7 +82,7 @@ class FcnPolicy(object):
         masks = tf.gather(self.masks, choice)
         masks = tf.cast(masks,tf.float32)
 
-        last_out = tf.math.multiply(self.h, masks)
+        last_out = tf.multiply(self.h, masks)
         with tf.variable_scope(self.name, reuse=True):
             with tf.variable_scope('pol', reuse=True):
                 if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
