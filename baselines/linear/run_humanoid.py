@@ -3,7 +3,7 @@ import os
 from baselines.common.cmd_util import make_mujoco_env, mujoco_arg_parser
 from baselines.common import tf_util as U
 from baselines import logger
-
+import numpy as np
 import gym
 
 def train(env_id,num_timesteps, seed, model_path=None, ratio=0.1):
@@ -58,20 +58,43 @@ def main():
         train(env_id = args.env,num_timesteps=args.num_timesteps, seed=args.seed, model_path=args.model_path, ratio=args.reward_scale)
     else:
         # construct the model object, load pre-trained model and render
-        pi = train(num_timesteps=1, seed=args.seed)
+        pi = train(env_id = args.env,num_timesteps=1, seed=args.seed)
         U.load_state(args.model_path)
-        env = make_mujoco_env('Humanoid-v2', seed=0)
 
-        ob = env.reset()
-        while True:
-            action = pi.act(stochastic=False, ob=ob)[0]
-            ob, _, done, _ =  env.step(action)
-            env.render()
-            if done:
-                ob = env.reset()
+        seeds = range(1, 16)
+        stds = []
+        means = []
+        for seed in seeds:
+            env = make_mujoco_env(args.env, seed=seed)
 
+            ob = env.reset()
 
+            eps = 0
 
+            eprets = []
+            rews = []
+            while eps < args.num_timesteps:
+                action = pi.act(stochastic=False, ob=ob)[0]
+                ob, rew, done, _ = env.step(action)
+                rews.append(rew)
+
+                if done:
+                    eps += 1
+                    ob = env.reset()
+                    epret = np.sum(rews)
+                    # print(epret)
+                    eprets.append(epret)
+                    rews = []
+
+            std = np.std(eprets)
+            stds.append(std)
+            mean = np.mean(eprets)
+            means.append(mean)
+            print("average reward: %f" % mean)
+            print("Seed: %f" % seed)
+
+        np.savetxt('./baselines/linear/data/'+args.env+'_s'+str(args.seed)+'_stds.txt', np.asarray(stds))
+        np.savetxt('./baselines/linear/data/'+args.env+'_s'+str(args.seed)+'_means.txt', np.asarray(means))
 
 if __name__ == '__main__':
     main()
