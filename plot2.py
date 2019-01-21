@@ -36,8 +36,8 @@ def plot(seeds, reward_scale, alg, env_id):
 env_id = "Hopper-v2"
 #seeds = [1,2,3,4,5]
 #reward_scale=0.1
-algs = ['fcn', 'scn','relu']
-seeds = range(11,16)
+algs = ['fcn', 'scn']
+seeds = range(1,16)
 plt.title("Hopper-v2")
 #plt.subplot(1,2,1)
 
@@ -54,8 +54,10 @@ for alg in algs:
 
     plt.errorbar(seeds, m, std,  linestyle='None', marker='.', capsize=3, label="{}".format("mlp" if alg == 'ppo1' else alg))
 
-print('Mean: ', np.mean(m))
-print('Std: ', np.std(m))
+    print("Algorithm: ", alg)
+    print('Mean: ', np.mean(m))
+    print('Std: ', np.mean(std))
+
 plt.legend(loc=4)
 plt.xlabel('Random Seed')
 plt.ylabel('Mean Reward')
