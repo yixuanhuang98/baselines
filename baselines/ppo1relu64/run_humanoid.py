@@ -93,8 +93,8 @@ def main():
             print("average reward: %f" % mean)
             print("Seed: %f" % seed)
 
-        np.savetxt('./baselines/ppo1/data/'+args.env+'_s'+str(args.seed)+'_stds.txt', np.asarray(stds))
-        np.savetxt('./baselines/ppo1/data/'+args.env+'_s'+str(args.seed)+'_means.txt', np.asarray(means))
+        np.savetxt('./baselines/ppo1relu64/data/'+args.env+'_s'+str(args.seed)+'_stds.txt', np.asarray(stds))
+        np.savetxt('./baselines/ppo1relu64/data/'+args.env+'_s'+str(args.seed)+'_means.txt', np.asarray(means))
 
 if __name__ == '__main__':
     main()
