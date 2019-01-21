@@ -12,7 +12,10 @@ class FcnPolicy(object):
             self._init(*args, **kwargs)
             self.scope = tf.get_variable_scope().name
 
-    def _init(self, ob_space, ac_space, num_actors, hid_size, num_hid_layers, gaussian_fixed_var=True):
+    def _init(self, ob_space, ac_space, num_actors, hid_size, num_hid_layers, masks, gaussian_fixed_var=True):
+
+        self.masks = tf.stack(masks)
+
         assert isinstance(ob_space, gym.spaces.Box)
 
         self.cpdtype = cpdtype = CategoricalPdType(num_actors)
@@ -41,41 +44,31 @@ class FcnPolicy(object):
 
         # get the choice probability distribution
         self.cpd = cpdtype.pdfromflat(hidden_decision)
-        self.choice = ch = self.cpd.sample()
+        ch = self.cpd.sample()
 
         with tf.variable_scope('pol'):
-            last_outs = []
-            actors = []
-            params = []
-            pdparams = []
-            for i in range(num_actors):
-                last_outs.append(tf.layers.dense(obz, hid_size, name='sub%i'%(i+1), kernel_initializer=U.normc_initializer(1.0)))
+
+            self.h = last_out = tf.layers.dense(obz, hid_size, name='fc1', kernel_initializer=U.normc_initializer(1.0))
 
             ch = tf.reshape(ch,[-1])
-            r = tf.range(tf.shape(ch)[0])
-            ch = tf.cast(ch,tf.int32)
-            ch_nd = tf.stack([ch,r],axis=1)
+            masks = tf.gather(self.masks, ch)
+            masks = tf.cast(masks,tf.float32)
+
+            last_out = tf.math.multiply(last_out, masks)
 
             if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
-                for i in range(num_actors):
-                    actors.append(tf.layers.dense(last_outs[i],pdtype.param_shape()[0]//2,name="final%i"%(i+1),kernel_initializer=U.normc_initializer(0.01)))
-                    logstd = tf.get_variable(name="logstd%i"%(i+1), shape=[1, pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
-                    pdparams.append(tf.concat([actors[i], actors[i] * 0.0 + logstd], axis=1))
-
-                self.actors = tf.stack(pdparams)
-                pdparam = tf.gather_nd(self.actors, ch_nd)
-
+                mean = tf.layers.dense(last_out,pdtype.param_shape()[0]//2,name="fc2",kernel_initializer=U.normc_initializer(0.01))
+                logstd = tf.get_variable(name="logstd", shape=[1, pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
+                pdparam = tf.concat([mean, mean * 0.0 + logstd], axis=1)
             else:
-                for i in range(num_actors):
-                    actors.append(tf.layers.dense(last_outs[i],pdtype.param_shape()[0],name="final%i"%(i+1),kernel_initializer=U.normc_initializer(0.01)))
-                self.actors = tf.stack(actors)
-                pdparam = tf.gather_nd(self.actors, ch_nd)
+                pdparam = tf.layers.dense(last_out, pdtype.param_shape()[0], name='fc2', kernel_initializer=U.normc_initializer(0.01))
 
         self.pd = pdtype.pdfromflat(pdparam)
 
         self.state_in = []
         self.state_out = []
         stochastic = tf.placeholder(dtype=tf.bool, shape=())
+
         ac = U.switch(stochastic, self.pd.sample(), self.pd.mode())
 
         self._act = U.function([stochastic, ob], [ac,ch,self.vpred])
@@ -86,12 +79,19 @@ class FcnPolicy(object):
 
     def pd_given_ch(self, choice,ac_space, gaussian_fixed_var=True):
         choice = tf.reshape(choice,[-1])
-        choice = tf.cast(choice,tf.int32)
+        masks = tf.gather(self.masks, choice)
+        masks = tf.cast(masks,tf.float32)
 
-        r = tf.range(tf.shape(choice)[0])
-        ch_nd = tf.stack([choice,r],axis=1)
-        pdparams = tf.gather_nd(self.actors, ch_nd)
-        return self.pdtype.pdfromflat(pdparams)
+        last_out = tf.math.multiply(self.h, masks)
+        with tf.variable_scope(self.name, reuse=True):
+            with tf.variable_scope('pol', reuse=True):
+                if gaussian_fixed_var and isinstance(ac_space, gym.spaces.Box):
+                    mean = tf.layers.dense(last_out,self.pdtype.param_shape()[0]//2,name="fc2",kernel_initializer=U.normc_initializer(0.01))
+                    logstd = tf.get_variable(name="logstd", shape=[1, self.pdtype.param_shape()[0]//2], initializer=tf.zeros_initializer())
+                    pdparam = tf.concat([mean, mean * 0.0 + logstd], axis=1)
+                else:
+                    pdparam = tf.layers.dense(last_out, pdtype.param_shape()[0], name='fc2', kernel_initializer=U.normc_initializer(0.01))
+        return self.pdtype.pdfromflat(pdparam)
 
     def get_variables(self):
         return tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, self.scope)

@@ -3,15 +3,25 @@ import os
 from baselines.common.cmd_util import make_mujoco_env, mujoco_arg_parser
 from baselines.common import tf_util as U
 from baselines import logger
+import numpy as np
 
 import gym
 
 def train(env_id, num_timesteps, seed, model_path=None, num_actors=1, ratio=0.1):
+
+    hid_size = 64
+
+    # create the mask here
+    masks = []
+    for i in range(num_actors):
+        cur = np.random.randint(0,1, size=hid_size)
+        masks.append(cur)
+
     from baselines.fcn import fcn_policy, pposgd_simple
     U.make_session(num_cpu=1).__enter__()
-    def policy_fn(name, ob_space, ac_space):
+    def policy_fn(name, ob_space, ac_space, masks):
         return fcn_policy.FcnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, num_actors = num_actors,
-            hid_size=64, num_hid_layers=2)
+            hid_size=64, num_hid_layers=2, masks=masks)
     env = make_mujoco_env(env_id, seed)
 
     # parameters below were the best found in a simple random search
@@ -27,6 +37,7 @@ def train(env_id, num_timesteps, seed, model_path=None, num_actors=1, ratio=0.1)
             optim_batchsize=64,
             gamma=0.99,
             lam=0.95,
+            masks = masks,
             schedule='linear',
             env_name= env_id,
             seed = seed,
@@ -50,7 +61,7 @@ def main():
     parser = mujoco_arg_parser()
     parser.add_argument('--model-path', default=os.path.join(logger.get_dir(), 'humanoid_policy'))
     parser.set_defaults(num_timesteps=int(2e6))
-    parser.set_defaults(num_actors=int(3))
+    parser.set_defaults(num_actors=int(4))
 
     args = parser.parse_args()
 
