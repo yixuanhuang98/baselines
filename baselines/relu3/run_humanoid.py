@@ -7,7 +7,7 @@ import numpy as np
 import gym
 
 def train(env_id,num_timesteps, seed, model_path=None, ratio=0.1):
-    from baselines.ppo3 import mlp_policy, pposgd_simple
+    from baselines.relu3 import mlp_policy, pposgd_simple
     U.make_session(num_cpu=1).__enter__()
     def policy_fn(name, ob_space, ac_space):
         return mlp_policy.MlpPolicy(name=name, ob_space=ob_space, ac_space=ac_space,
@@ -93,8 +93,8 @@ def main():
             print("average reward: %f" % mean)
             print("Seed: %f" % seed)
 
-        np.savetxt('./baselines/ppo3/data/'+args.env+'_s'+str(args.seed)+'_stds.txt', np.asarray(stds))
-        np.savetxt('./baselines/ppo3/data/'+args.env+'_s'+str(args.seed)+'_means.txt', np.asarray(means))
+        np.savetxt('./baselines/relu3/data/'+args.env+'_s'+str(args.seed)+'_stds.txt', np.asarray(stds))
+        np.savetxt('./baselines/relu3/data/'+args.env+'_s'+str(args.seed)+'_means.txt', np.asarray(means))
 
 if __name__ == '__main__':
     main()
