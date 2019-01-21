@@ -36,7 +36,7 @@ def plot(seeds, reward_scale, alg, env_id):
 env_id = "Walker2d-v2"
 #seeds = [1,2,3,4,5]
 #reward_scale=0.1
-algs = ['fcn','scn', 'ppo1']
+algs = ['fcn', 'ppo1']
 seeds = range(1,6)
 plt.title("Walker2d-v2")
 #plt.subplot(1,2,1)
@@ -52,7 +52,7 @@ for alg in algs:
         tseeds = range(1,16)
         #plt.plot(tseeds, means, label="{}-{}".format(alg, seed))
 
-    plt.errorbar(seeds, m, std,  linestyle='None', marker='.', capsize=3, label="{}".format(alg))
+    plt.errorbar(seeds, m, std,  linestyle='None', marker='.', capsize=3, label="{}".format("mlp" if alg == 'ppo1' else alg))
 
 print('Mean: ', np.mean(m))
 print('Std: ', np.std(m))
