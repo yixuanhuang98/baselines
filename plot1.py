@@ -33,18 +33,10 @@ def plot(seeds, reward_scale, alg, env_id):
 
 
 
-env_id = "InvertedDoublePendulum-v2"
+env_id = "Hopper-v2"
 seeds = [1,2,3,4,5]
 reward_scale=0.1
-algs = ['fcn','nlfcn']
-for alg in algs:
-    ts, ma, mi, avg = plot(seeds, reward_scale, alg, env_id)
-    plt.fill_between(ts, ma,mi, alpha=0.5)
-    plt.plot(ts, avg, label="{}".format(alg))
-
-seeds = [1,2,3,4,5]
-reward_scale=0.1
-algs = ['ppo1','scn','linear','scn64']
+algs = ['fcn','ppo3']
 for alg in algs:
     ts, ma, mi, avg = plot(seeds, reward_scale, alg, env_id)
     plt.fill_between(ts, ma,mi, alpha=0.5)
@@ -55,5 +47,5 @@ plt.legend(loc=4)
 plt.xlabel('Number of Timesteps')
 plt.ylabel('Rewards')
 
-
-plt.savefig("./check/"+env_id+'.png')
+plt.show()
+#plt.savefig("./check/"+env_id+'.png')
