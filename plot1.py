@@ -36,7 +36,7 @@ def plot(seeds, reward_scale, alg, env_id):
 env_id = "Walker2d-v2"
 seeds = [1,2,3,4,5]
 reward_scale=0.1
-algs = ['ppo1','ppo3', 'linear']
+algs = ['ppo1','ppo3', 'linear', 'relu3', 'scn3']
 for alg in algs:
     ts, ma, mi, avg = plot(seeds, reward_scale, alg, env_id)
     plt.fill_between(ts, ma,mi, alpha=0.5)
