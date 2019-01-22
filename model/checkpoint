@@ -1,2 +1,2 @@
-model_checkpoint_path: "hyb_hp_3"
-all_model_checkpoint_paths: "hyb_hp_3"
+model_checkpoint_path: "stunl_hp_5"
+all_model_checkpoint_paths: "stunl_hp_5"
