@@ -37,10 +37,13 @@ env_id = "Walker2d-v2"
 seeds = [1,2,3,4,5]
 reward_scale=0.1
 algs = ['ppo1','ppo3', 'linear', 'relu3', 'scn3']
+names = ['MLP-64', 'MLP-3', 'Linear', 'ReLU-3', 'SCN-3']
+i = 0
 for alg in algs:
     ts, ma, mi, avg = plot(seeds, reward_scale, alg, env_id)
     plt.fill_between(ts, ma,mi, alpha=0.5)
-    plt.plot(ts, avg, label="{}".format(alg))
+    plt.plot(ts, avg, label="{}".format(names[i]))
+    i = i+1
 
 plt.title(env_id)
 plt.legend(loc=4)
