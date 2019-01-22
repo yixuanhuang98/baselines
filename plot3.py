@@ -34,7 +34,7 @@ def plot(seeds, reward_scale, alg, env_id):
 
 
 env_id = "Hopper-v2"
-algs = ['fcn', 'scn', 'linear']
+algs = ['fcn', 'scn', 'linear', 'ppo1']
 
 seeds = range(1,11)
 
@@ -58,7 +58,7 @@ for alg in algs:
     print('Std: ', np.mean(std))
     performance[alg].append(np.mean(std))
 
-
+'''
 seeds = range(1,16)
 for alg in algs:
     m = []
@@ -76,7 +76,7 @@ for alg in algs:
     print('Mean: ', np.mean(m))
     print('Std: ', np.mean(std))
     performance[alg].append(np.mean(std))
-
+'''
 
 # data to plot
 y_pos = np.arange(len(algs))
