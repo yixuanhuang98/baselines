@@ -1,2 +1,2 @@
-model_checkpoint_path: "hyb_wk_3"
-all_model_checkpoint_paths: "hyb_wk_3"
+model_checkpoint_path: "hyb_hp_3"
+all_model_checkpoint_paths: "hyb_hp_3"
