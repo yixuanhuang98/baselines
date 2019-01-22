@@ -1,2 +1,2 @@
-model_checkpoint_path: "scn3_wk_1"
-all_model_checkpoint_paths: "scn3_wk_1"
+model_checkpoint_path: "linear_ho_6"
+all_model_checkpoint_paths: "linear_ho_6"
