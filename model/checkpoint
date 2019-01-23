@@ -1,2 +1,2 @@
-model_checkpoint_path: "fcn_Swimmer-v25"
-all_model_checkpoint_paths: "fcn_Swimmer-v25"
+model_checkpoint_path: "fcn_Humanoid-v24"
+all_model_checkpoint_paths: "fcn_Humanoid-v24"
