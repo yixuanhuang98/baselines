@@ -74,7 +74,7 @@ def main():
             #os.system('python  -m baselines.scn.run'+ ' --seed='+str(seed) + ' --reward_scale='+str(reward_scale[0]) + ' --env=' + env_id + " --model-path=model/fcn_"+env_id+str(seed))
             #os.system('python  -m baselines.ppo1.run'+ ' --seed='+str(seed) + ' --reward_scale='+str(reward_scale[0]) + ' --env=' + env_id + " --model-path=model/fcn_"+env_id+str(seed))
         
-        plot(algs, reward_scale[1], env_id)
+        #plot(algs, reward_scale[1], env_id)
 
     elif args["env_id"] == "InvertedPendulum" or args["env_id"] == "InvertedDoublePendulum":
         env_id = args["env_id"] + "-v2"
@@ -90,7 +90,7 @@ def main():
             os.system('python  -m baselines.fcn_alt.run'+ ' --seed='+str(seed) + ' --reward_scale='+str(reward_scale[0]) + ' --env=' + env_id + " --model-path=model/fcn_"+env_id+str(seed))
             #os.system('python  -m baselines.scn.run'+ ' --seed='+str(seed) + ' --reward_scale='+str(reward_scale[0]) + ' --env=' + env_id + " --model-path=model/fcn_"+env_id+str(seed))
             #os.system('python  -m baselines.ppo1.run'+ ' --seed='+str(seed) + ' --reward_scale='+str(reward_scale[0]) + ' --env=' + env_id + " --model-path=model/fcn_"+env_id+str(seed))
-        plot(algs, reward_scale[0], env_id)
+        #plot(algs, reward_scale[0], env_id)
 
     elif args["env_id"] == "HalfCheetah":
         env_id = "HalfCheetah-v2"

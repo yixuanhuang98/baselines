@@ -76,7 +76,7 @@ class FcnPolicy(object):
 
         self.state_in = []
         self.state_out = []
-        ac = U.switch(stochastic, self.pd.sample(), self.pd.mode())
+        ac = U.switch(stochastic, self.pd.mode(), self.pd.sample())
 
         self._act = U.function([stochastic, ob], [ac,ch,self.vpred])
 

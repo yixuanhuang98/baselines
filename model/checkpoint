@@ -1,2 +1,2 @@
-model_checkpoint_path: "fcn_Humanoid-v24"
-all_model_checkpoint_paths: "fcn_Humanoid-v24"
+model_checkpoint_path: "fcn_Hopper-v21"
+all_model_checkpoint_paths: "fcn_Hopper-v21"
