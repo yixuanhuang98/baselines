@@ -10,10 +10,10 @@ def plot_helper(seeds, reward_scale, alg, env_id):
     max_len = -1
     for seed in seeds:
 
-        rw = np.loadtxt('./-m baselines.'+alg+'/data/'+env_id+'_s'+str(seed)+'_r'+str(reward_scale)+'_rew.txt') * (1 / reward_scale)
+        rw = np.loadtxt('./baselines/'+alg+'/data/'+env_id+'_s'+str(seed)+'_r'+str(reward_scale)+'_rew.txt') * (1 / reward_scale)
         if rw.size > max_len:
             max_len = rw.size
-            tss = np.loadtxt('./-m baselines.'+alg+'/data/'+env_id+'_s'+str(seed)+'_r'+str(reward_scale)+'_ts.txt')
+            tss = np.loadtxt('./baselines/'+alg+'/data/'+env_id+'_s'+str(seed)+'_r'+str(reward_scale)+'_ts.txt')
         rws.append(rw)
 
     for i in range(len(rws)):
@@ -56,7 +56,7 @@ def main():
     args = vars(parser.parse_args())
 
     seed_list = [1,2,3,4,5]
-    reward_scale = [0.1,1]
+    reward_scale = [0.1,1.0]
     algs = ["fcn", "scn", "ppo1"]
     if args["env_id"] == "Humanoid":
         env_id = "Humanoid-v2"
@@ -69,10 +69,11 @@ def main():
 
     elif args["env_id"] == "Walker2d" or args["env_id"] == "Swimmer":
         env_id = args["env_id"] + "-v2"
-        for seed in seed_list:
+        '''for seed in seed_list:
             os.system('python  -m baselines.fcn.run'+ ' --seed='+str(seed) + ' --reward_scale='+str(reward_scale[1]) + ' --env=' + env_id + " --model-path=model/fcn_"+env_id+str(seed))
             os.system('python  -m baselines.scn.run'+ ' --seed='+str(seed) + ' --reward_scale='+str(reward_scale[0]) + ' --env=' + env_id + " --model-path=model/fcn_"+env_id+str(seed))
             os.system('python  -m baselines.ppo1.run'+ ' --seed='+str(seed) + ' --reward_scale='+str(reward_scale[0]) + ' --env=' + env_id + " --model-path=model/fcn_"+env_id+str(seed))
+        '''
         plot(algs, reward_scale[1], env_id)
 
     elif args["env_id"] == "InvertedPendulum" or args["env_id"] == "InvertedDoublePendulum":
