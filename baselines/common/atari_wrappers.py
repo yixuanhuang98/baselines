@@ -6,6 +6,8 @@ import gym
 from gym import spaces
 import cv2
 cv2.ocl.setUseOpenCL(False)
+from .wrappers import TimeLimit
+
 
 class NoopResetEnv(gym.Wrapper):
     def __init__(self, env, noop_max=30):
@@ -72,8 +74,8 @@ class EpisodicLifeEnv(gym.Wrapper):
         # then update lives to handle bonus lives
         lives = self.env.unwrapped.ale.lives()
         if lives < self.lives and lives > 0:
-            # for Qbert sometimes we stay in lives == 0 condtion for a few frames
-            # so its important to keep lives > 0, so that we only reset once
+            # for Qbert sometimes we stay in lives == 0 condition for a few frames
+            # so it's important to keep lives > 0, so that we only reset once
             # the environment advertises done.
             done = True
         self.lives = lives
@@ -221,14 +223,13 @@ class LazyFrames(object):
     def __getitem__(self, i):
         return self._force()[i]
 
-def make_atari(env_id, timelimit=True):
-    # XXX(john): remove timelimit argument after gym is upgraded to allow double wrapping
+def make_atari(env_id, max_episode_steps=None):
     env = gym.make(env_id)
-    if not timelimit:
-        env = env.env
     assert 'NoFrameskip' in env.spec.id
     env = NoopResetEnv(env, noop_max=30)
     env = MaxAndSkipEnv(env, skip=4)
+    if max_episode_steps is not None:
+        env = TimeLimit(env, max_episode_steps=max_episode_steps)
     return env
 
 def wrap_deepmind(env, episode_life=True, clip_rewards=True, frame_stack=False, scale=False):

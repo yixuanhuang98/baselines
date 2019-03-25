@@ -18,22 +18,31 @@ from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv
 from baselines.common.vec_env.dummy_vec_env import DummyVecEnv
 from baselines.common import retro_wrappers
 
-def make_vec_env(env_id, env_type, num_env, seed, wrapper_kwargs=None, start_index=0, reward_scale=1.0, gamestate=None):
+def make_vec_env(env_id, env_type, num_env, seed,
+                 wrapper_kwargs=None,
+                 start_index=0,
+                 reward_scale=1.0,
+                 flatten_dict_observations=True,
+                 gamestate=None):
     """
     Create a wrapped, monitored SubprocVecEnv for Atari and MuJoCo.
     """
-    if wrapper_kwargs is None: wrapper_kwargs = {}
+    wrapper_kwargs = wrapper_kwargs or {}
     mpi_rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
     seed = seed + 10000 * mpi_rank if seed is not None else None
+    logger_dir = logger.get_dir()
     def make_thunk(rank):
         return lambda: make_env(
             env_id=env_id,
             env_type=env_type,
-            subrank = rank,
+            mpi_rank=mpi_rank,
+            subrank=rank,
             seed=seed,
             reward_scale=reward_scale,
             gamestate=gamestate,
-            wrapper_kwargs=wrapper_kwargs
+            flatten_dict_observations=flatten_dict_observations,
+            wrapper_kwargs=wrapper_kwargs,
+            logger_dir=logger_dir
         )
 
     set_global_seeds(seed)
@@ -43,8 +52,8 @@ def make_vec_env(env_id, env_type, num_env, seed, wrapper_kwargs=None, start_ind
         return DummyVecEnv([make_thunk(start_index)])
 
 
-def make_env(env_id, env_type, subrank=0, seed=None, reward_scale=1.0, gamestate=None, wrapper_kwargs={}):
-    mpi_rank = MPI.COMM_WORLD.Get_rank() if MPI else 0
+def make_env(env_id, env_type, mpi_rank=0, subrank=0, seed=None, reward_scale=1.0, gamestate=None, flatten_dict_observations=True, wrapper_kwargs=None, logger_dir=None):
+    wrapper_kwargs = wrapper_kwargs or {}
     if env_type == 'atari':
         env = make_atari(env_id)
     elif env_type == 'retro':
@@ -54,9 +63,13 @@ def make_env(env_id, env_type, subrank=0, seed=None, reward_scale=1.0, gamestate
     else:
         env = gym.make(env_id)
 
+    if flatten_dict_observations and isinstance(env.observation_space, gym.spaces.Dict):
+        keys = env.observation_space.spaces.keys()
+        env = gym.wrappers.FlattenDictWrapper(env, dict_keys=list(keys))
+
     env.seed(seed + subrank if seed is not None else None)
     env = Monitor(env,
-                  logger.get_dir() and os.path.join(logger.get_dir(), str(mpi_rank) + '.' + str(subrank)),
+                  logger_dir and os.path.join(logger_dir, str(mpi_rank) + '.' + str(subrank)),
                   allow_early_resets=True)
 
     if env_type == 'atari':
@@ -123,6 +136,7 @@ def common_arg_parser():
     """
     parser = arg_parser()
     parser.add_argument('--env', help='environment ID', type=str, default='Reacher-v2')
+    parser.add_argument('--env_type', help='type of environment, used when the environment type cannot be automatically determined', type=str)
     parser.add_argument('--seed', help='RNG seed', type=int, default=None)
     parser.add_argument('--alg', help='Algorithm', type=str, default='ppo2')
     parser.add_argument('--num_timesteps', type=float, default=1e6),
@@ -134,6 +148,7 @@ def common_arg_parser():
     parser.add_argument('--save_video_interval', help='Save video every x steps (0 = disabled)', default=0, type=int)
     parser.add_argument('--save_video_length', help='Length of recorded video. Default: 200', default=200, type=int)
     parser.add_argument('--play', default=False, action='store_true')
+    parser.add_argument('--extra_import', help='Extra module to import to access external environments', type=str, default=None)
     return parser
 
 def robotics_arg_parser():
