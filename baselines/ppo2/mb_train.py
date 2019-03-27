@@ -77,10 +77,10 @@ def train(num_iter,ss,acs,s_primes,env,save_dir,lr=0.01,adam_epsilon=1e-5):
     ob_space = env.observation_space
     ac_space = env.action_space
 
-    model = MBModel("model",ob_space,ac_space,3,128)
+    model = MBModel("model",ob_space,ac_space,3,256)
 
 
-    batch_size = 64
+    batch_size = 128
     num_batch =  s_primes.shape[0] // batch_size
 
 
