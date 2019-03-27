@@ -17,7 +17,7 @@ class Runner(AbstractEnvRunner):
         # Discount rate
         self.gamma = gamma
 
-    def run(self):
+    def run(self,n_update):
         # Here, we init the lists that will contain the mb of experiences
         mb_obs, mb_rewards, mb_actions, mb_values, mb_dones, mb_neglogpacs = [],[],[],[],[],[]
         mb_states = self.states
@@ -49,6 +49,10 @@ class Runner(AbstractEnvRunner):
         mb_dones = np.asarray(mb_dones, dtype=np.bool)
         last_values = self.model.value(self.obs, S=self.states, M=self.dones)
 
+        np.save("./mb_data/obs_"+str(n_update),mb_obs)
+        np.save("./mb_data/actions_"+str(n_update),mb_actions)
+        np.save("./mb_data/dones_"+str(n_update),mb_dones)
+
         # discount/bootstrap off value fn
         mb_returns = np.zeros_like(mb_rewards)
         mb_advs = np.zeros_like(mb_rewards)
@@ -72,5 +76,3 @@ def sf01(arr):
     """
     s = arr.shape
     return arr.swapaxes(0, 1).reshape(s[0] * s[1], *s[2:])
-
-
