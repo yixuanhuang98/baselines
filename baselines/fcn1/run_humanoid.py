@@ -6,7 +6,8 @@ from baselines import logger
 
 import gym
 
-def train(env_id, num_timesteps, seed, model_path=None, num_actors=1, ratio=0.1):
+def train(env_id, num_timesteps, seed, model_path=None, num_actors=3, ratio=0.1):
+    print('222222')
     from baselines.fcn1 import fcn_policy, pposgd_simple
     U.make_session(num_cpu=1).__enter__()
     def policy_fn(name, ob_space, ac_space):
