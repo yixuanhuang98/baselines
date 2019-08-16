@@ -2,7 +2,17 @@ from baselines.common.mpi_running_mean_std import RunningMeanStd
 import baselines.common.tf_util as U
 import tensorflow as tf
 import gym
+from stable_baselines.sac.policies import MlpPolicy
+from stable_baselines.common.vec_env import DummyVecEnv
+from stable_baselines import SAC
 from baselines.common.distributions import make_pdtype, CategoricalPdType
+import os
+import argparse
+import time
+
+#from half_cheetah_env import HalfCheetahEnv
+from baselines.fcn1.logger import logger
+from baselines.fcn1.model_based_rl import ModelBasedRL
 
 class FcnPolicy(object):
     recurrent = False
@@ -16,6 +26,12 @@ class FcnPolicy(object):
 
         self.cpdtype = cpdtype = CategoricalPdType(num_actors)
         self.pdtype = pdtype = make_pdtype(ac_space)
+        #self.model_safe = SAC.load("/Users/huangyixuan/Downloads/racecar_1e5_3_2.9")
+        self.model_free = SAC.load("/home/gao-4144/yixuan/racecar_free_5e5")
+        #self.model_free = SAC.load("/home/gao-4144/yixuan/racecar_with_reward_1e5")
+        self.mbrl = ModelBasedRL()
+        self.mbrl._train_policy(self.mbrl._random_dataset)
+        #logger.setup('debug')
         sequence_length = None
 
         ob = U.get_placeholder(name="ob", dtype=tf.float32, shape=[sequence_length] + list(ob_space.shape))
@@ -74,6 +90,16 @@ class FcnPolicy(object):
 
     def act(self, stochastic, ob):
         ac1,ch1, vpred1 =  self._act(stochastic, ob[None])
+        # print('choice')
+        # print(ch1[0])  choice 0 and choice 1
+        # if(ch1[0] == 1):
+        #     ac1[:2], _ = self.model_safe.predict(ob)
+        # else:
+        #     ac1[:2], _ = self.model_free.predict(ob)
+        if(ch1[0] == 1):
+            ac1[:2] = self.mbrl._policy.get_action(ob)
+        # else:
+        #     ac1[:2], _ = self.model_free.predict(ob)
         return ac1[0],ch1, vpred1[0]
 
     def pd_given_ch(self, choice,ac_space, gaussian_fixed_var=True):
@@ -96,3 +122,4 @@ class FcnPolicy(object):
         return tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, self.scope)
     def get_initial_state(self):
         return []
+

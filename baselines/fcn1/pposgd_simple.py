@@ -28,6 +28,9 @@ def traj_segment_generator(pi, env, horizon, stochastic):
     chs = np.array([[0] for _ in range(horizon)])
     prevacs = acs.copy()
     prevchs = chs.copy()
+    total_ob = []
+    total_ac = []
+    total_ch = []
 
     while True:
         prevac = ac
@@ -44,6 +47,15 @@ def traj_segment_generator(pi, env, horizon, stochastic):
             ep_rets = []
             ep_lens = []
         i = t % horizon
+        total_ob.append(ob)
+        total_ac.append(ac)
+        total_ch.append(ch)
+        if(np.shape(total_ac)[0] >= 3000 and i == horizon - 1):
+            total_final = np.concatenate((total_ob,total_ch),axis = 1)
+            print(np.shape(total_final))
+            print('collecting txt')
+            #np.savetxt('/Users/huangyixuan/txt_result/switch_15',(total_final)) 
+            np.savetxt('/home/gao-4144/yixuan/txt_result/switch_17',(total_final))  
         obs[i] = ob
         vpreds[i] = vpred
         news[i] = new
@@ -244,3 +256,4 @@ def learn(env, policy_fn, *,
 
 def flatten_lists(listoflists):
     return [el for list_ in listoflists for el in list_]
+

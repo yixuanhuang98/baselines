@@ -3,17 +3,18 @@ import os
 from baselines.common.cmd_util import make_mujoco_env, mujoco_arg_parser
 from baselines.common import tf_util as U
 from baselines import logger
+import pybullet_envs.bullet.racecarGymEnv as e
 
 import gym
 
-def train(env_id, num_timesteps, seed, model_path=None, num_actors=3, ratio=0.1):
-    print('222222')
+def train(env_id, num_timesteps, seed, model_path=None, num_actors=2, ratio=0.1):
     from baselines.fcn1 import fcn_policy, pposgd_simple
     U.make_session(num_cpu=1).__enter__()
     def policy_fn(name, ob_space, ac_space):
         return fcn_policy.FcnPolicy(name=name, ob_space=ob_space, ac_space=ac_space, num_actors = num_actors,
             hid_size=64, num_hid_layers=2)
-    env = make_mujoco_env(env_id, seed)
+    env = e.RacecarGymEnv(isDiscrete=False ,renders=False)
+    #env = make_mujoco_env(env_id, seed)
 
     # parameters below were the best found in a simple random search
     # these are good enough to make humanoid walk, but whether those are
@@ -51,7 +52,7 @@ def main():
     parser = mujoco_arg_parser()
     parser.add_argument('--model-path', default=os.path.join(logger.get_dir(), 'humanoid_policy'))
     parser.set_defaults(num_timesteps=int(2e6))
-    parser.set_defaults(num_actors=int(1))
+    parser.set_defaults(num_actors=int(2))
 
     args = parser.parse_args()
 
@@ -77,3 +78,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
