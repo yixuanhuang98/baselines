@@ -366,7 +366,7 @@ class ModelBasedRL(object):
 
                 state = next_state
                 t += 1
-            np.savetxt('/home/gao-4144/yixuan/txt_result/no_switch_2',total_ob)
+            np.savetxt('/home/dingcheng/Documents/safe_learning/txt_result/no_switch_2',total_ob)
         
 
         return dataset

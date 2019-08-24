@@ -8,6 +8,24 @@ from baselines.common.mpi_moments import mpi_moments
 from mpi4py import MPI
 from collections import deque
 
+from tensorflow import keras
+from tensorflow.keras import layers
+
+# Policy network
+def build_policy():
+  policy = keras.Sequential([
+    layers.Dense(64, activation=tf.nn.relu, input_shape=[6]),
+    layers.Dense(64, activation=tf.nn.relu),
+    layers.Dense(2)
+  ])
+
+  optimizer = tf.keras.optimizers.RMSprop(0.001)
+
+  policy.compile(loss='mean_squared_error',
+                optimizer=optimizer,
+                metrics=['mean_absolute_error', 'mean_squared_error'])
+  return policy
+
 def traj_segment_generator(pi, env, horizon, stochastic):
     t = 0
     ac = env.action_space.sample() # not used, just so we have the datatype
@@ -53,9 +71,27 @@ def traj_segment_generator(pi, env, horizon, stochastic):
         if(np.shape(total_ac)[0] >= 3000 and i == horizon - 1):
             total_final = np.concatenate((total_ob,total_ch),axis = 1)
             print(np.shape(total_final))
+
+            obs_train = np.array(total_ob)
+            ac_train = np.array(total_ac)
+
+            policy = build_policy()
+
+            # TODO data prepocessing
+            print("Start fitting the policy by cloing MPC Controller")
+            # TODO tune the training parameter
+            policy.fit(obs_train, ac_train,
+                        epochs=30, validation_split = 0.2, verbose=2)
+            print("Finish fitting the policy")
+
+            # save the policy
+            import time
+            saved_model_path = "./saved_models/"+str(int(time.time()))
+            tf.contrib.saved_model.save_keras_model(policy, saved_model_path)
+
             print('collecting txt')
             #np.savetxt('/Users/huangyixuan/txt_result/switch_15',(total_final)) 
-            np.savetxt('/home/gao-4144/yixuan/txt_result/switch_17',(total_final))  
+            np.savetxt('/home/dingcheng/Documents/safe_learning/txt_result/switch_17',(total_final))  
         obs[i] = ob
         vpreds[i] = vpred
         news[i] = new
