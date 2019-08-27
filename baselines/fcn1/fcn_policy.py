@@ -100,9 +100,9 @@ class FcnPolicy(object):
         if(ch1[0] == 1):
             #print("fcn_policy.py: get action")
             ac1[:2] = self.mbrl._policy.get_action(ob)
-
+            print(ob[1])
             # load the policy
-            #saved_model_path = "/home/dingcheng/Documents/safe_learning/saved_models/1566617329"
+            #saved_model_path = "/home/dingcheng/Documents/safe_learning/saved_models/1566785291"
             #policy = tf.contrib.saved_model.load_keras_model(saved_model_path)
             #ac1[0] = np.ndarray.tolist(policy.predict(np.array(ob).reshape(1,len(ob))))[0]
         # else:

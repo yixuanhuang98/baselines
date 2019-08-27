@@ -52,6 +52,7 @@ def traj_segment_generator(pi, env, horizon, stochastic):
 
     while True:
         prevac = ac
+        #print(np.shape(total_ac)[0])
         ac,ch, vpred = pi.act(stochastic, ob)
         # Slight weirdness here because we need value function at time T
         # before returning segment [0, T-1] so we get the correct
@@ -79,9 +80,9 @@ def traj_segment_generator(pi, env, horizon, stochastic):
 
             # TODO data prepocessing
             print("Start fitting the policy by cloing MPC Controller")
-            # TODO tune the training parameter
+            # TODO tune the training parameter and overfitting strategy
             policy.fit(obs_train, ac_train,
-                        epochs=30, validation_split = 0.2, verbose=2)
+                        epochs=1000, validation_split = 0.2, verbose=2)
             print("Finish fitting the policy")
 
             # save the policy
@@ -89,9 +90,12 @@ def traj_segment_generator(pi, env, horizon, stochastic):
             saved_model_path = "./saved_models/"+str(int(time.time()))
             tf.contrib.saved_model.save_keras_model(policy, saved_model_path)
 
+            np.savetxt('/home/dingcheng/Documents/safe_learning/txt_result/obs_train',(obs_train))
+            np.savetxt('/home/dingcheng/Documents/safe_learning/txt_result/ac_train',(ac_train))
             print('collecting txt')
             #np.savetxt('/Users/huangyixuan/txt_result/switch_15',(total_final)) 
-            np.savetxt('/home/dingcheng/Documents/safe_learning/txt_result/switch_17',(total_final))  
+            np.savetxt('/home/dingcheng/Documents/safe_learning/txt_result/switch_17',(total_final))
+            assert 0  
         obs[i] = ob
         vpreds[i] = vpred
         news[i] = new

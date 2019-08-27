@@ -147,8 +147,14 @@ class ModelBasedRL(object):
         self.ppo_choice = PPO()
 
         #logger.info('Gathering random dataset')
-        self._random_dataset = self._gather_rollouts(baselines.fcn1.utils.RandomPolicy(self._env),
-                                                     num_init_random_rollouts)
+        #self._random_dataset = self._gather_rollouts(baselines.fcn1.utils.RandomPolicy(self._env),
+        #                                             num_init_random_rollouts)
+
+        # train the model
+        self.model = SAC(MlpPolicy, self._env, verbose=1)
+        import stable_baselines
+        self._random_dataset = self.model.learn(total_timesteps=1000, log_interval=10, num_init_random_rollouts=num_init_random_rollouts)
+        self.model.save("racecar_3e5_free_3")
 
         #logger.info('Creating policy')
         self._policy = ModelBasedPolicy(self._env,
